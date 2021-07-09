@@ -1,0 +1,19 @@
+{
+  "name": "remini",
+  "version": "0.0.1",
+  "main": "index.ts",
+  "license": "MIT",
+  "scripts": {
+    "start": "parcel index.html",
+    "test": "jest --watch --env=jsdom"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.14.6",
+    "@babel/preset-env": "^7.14.7",
+    "@babel/preset-typescript": "^7.14.5",
+    "@types/jest": "^26.0.24",
+    "babel-jest": "^27.0.6",
+    "jest": "^27.0.6",
+    "parcel": "^2.0.0-beta.2"
+  }
+}
