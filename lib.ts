@@ -30,45 +30,47 @@ export const createElement = (
   };
 };
 
-let rootTree: RElement = null;
-
-let currentNode: RNode = null;
-
 const _render = (element: RElement): Node => {
   if (typeof element === "string") {
     return document.createTextNode(element);
   } else if (typeof element.type === "string") {
     const html = document.createElement(element.type);
-    const { children, ...attributes } = element.props;
+    const { children, onClick, ...attributes } = element.props;
 
+    html.addEventListener("click", onClick);
+
+    // Apply attributes.
     Object.entries(attributes).forEach(([key, value]) => {
       html.setAttribute(key, value);
     });
 
+    // Add children.
     children.forEach((child) => {
       html.appendChild(_render(child));
     });
+
     return html;
   } else {
     return _render(element.type(element.props));
   }
 };
 
-export const useState = <T>(value: T): [T, (value: T) => void] => {
-  return [
-    value,
-    (value: T) => {
-      currentNode.state = value;
-      // _render(currentNode)
-    },
-  ];
+export const useState = <T>(initial: T): [T, (value: T) => void] => {
+  const state = [];
+
+  state[0] = initial;
+  state[1] = (next: T) => {
+    state[0] = next;
+    console.log(state);
+  };
+
+  // @ts-ignore
+  return state;
 };
 
-// Replaces <body> with rendered tree.
+// Replaces <body /> with rendered tree.
 export const render = (tree: RElement) => {
-  rootTree = tree;
-
-  const result = _render(rootTree);
+  const result = _render(tree);
   document.body.innerHTML = "";
   document.body.appendChild(result);
 };
