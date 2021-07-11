@@ -1,4 +1,4 @@
-import { createElement as c, render } from "./lib";
+import { createElement as c, render, RNode, rootNode } from "./lib";
 
 describe("createElement", () => {
   it("works for simple HTML", () => {
@@ -70,16 +70,101 @@ describe("createElement", () => {
 });
 
 describe("render", () => {
-  it("works", () => {
+  // it("works", () => {
+  //   const root = document.createElement("div");
+  //   document.body.appendChild(root);
+
+  //   const tree = c("a", { href: "https://google.com" }, ["Google"]);
+
+  //   render(tree, root);
+
+  //   expect(document.body.innerHTML).toBe(
+  //     '<div><a href="https://google.com" children="Google">Google</a></div>'
+  //   );
+  // });
+
+  it("", () => {
     const root = document.createElement("div");
     document.body.appendChild(root);
 
-    const tree = c("a", { href: "https://google.com" }, ["Google"]);
+    const Counter = ({ children }) => {
+      return c("div", {}, [
+        c("span", {}, children),
+        c("span", { style: "color: #ff0000" }, "0"),
+      ]);
+    };
+
+    const tree = c("div", {}, [
+      c(Counter, {}, "Counter: "),
+      c("h1", {}, "Test"),
+    ]);
 
     render(tree, root);
 
-    expect(document.body.innerHTML).toBe(
-      '<div><a href="https://google.com" children="Google">Google</a></div>'
-    );
+    const expected: RNode = {
+      props: null,
+      type: "div",
+      descendants: [
+        {
+          type: Counter,
+          props: {
+            children: "Counter: ",
+          },
+          name: "Counter",
+          descendants: [
+            {
+              props: {
+                children: [
+                  {
+                    type: "span",
+                    props: {
+                      children: "Counter: ",
+                    },
+                  },
+                  {
+                    type: "span",
+                    props: {
+                      style: "color: #ff0000",
+                      children: "0",
+                    },
+                  },
+                ],
+              },
+              type: "div",
+              name: "div",
+              descendants: [
+                {
+                  props: {
+                    children: "Counter: ",
+                  },
+                  type: "span",
+                  name: "span",
+                  descendants: [],
+                },
+                {
+                  props: {
+                    style: "color: #ff0000",
+                    children: "0",
+                  },
+                  type: "span",
+                  name: "span",
+                  descendants: [],
+                },
+              ],
+            },
+          ],
+        },
+        {
+          props: {
+            children: "Test",
+          },
+          type: "h1",
+          name: "h1",
+          descendants: [],
+        },
+      ],
+    };
+
+    expect(rootNode).toStrictEqual(expected);
   });
 });
