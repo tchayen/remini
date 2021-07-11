@@ -10,15 +10,6 @@ export type RElement =
     }
   | string;
 
-export type RNode = {
-  parent: RNode;
-  children: RNode[];
-  state: any;
-  render: RenderFunction;
-};
-
-// Creates element, which is definition of React subtree. Doesn't resolve
-// components into their subtrees.
 export const createElement = (
   component: RenderFunction | string,
   props: any,
@@ -30,47 +21,28 @@ export const createElement = (
   };
 };
 
-const _render = (element: RElement): Node => {
+const isProp = (key: string) => key !== "chidren" && !key.startsWith("on");
+
+export const render = (element: RElement, container: HTMLElement) => {
+  let append;
   if (typeof element === "string") {
-    return document.createTextNode(element);
+    append = document.createTextNode(element);
   } else if (typeof element.type === "string") {
-    const html = document.createElement(element.type);
-    const { children, onClick, ...attributes } = element.props;
+    const dom = document.createElement(element.type);
 
-    html.addEventListener("click", onClick);
+    Object.entries(element.props)
+      .filter(([key]) => isProp(key))
+      .forEach(([key, value]) => {
+        dom.setAttribute(key, value);
+      });
 
-    // Apply attributes.
-    Object.entries(attributes).forEach(([key, value]) => {
-      html.setAttribute(key, value);
-    });
-
-    // Add children.
-    children.forEach((child) => {
-      html.appendChild(_render(child));
-    });
-
-    return html;
-  } else {
-    return _render(element.type(element.props));
+    if (typeof element !== "string") {
+      element.props.children.forEach((child) => {
+        render(child, dom);
+      });
+    }
+    append = dom;
   }
-};
 
-export const useState = <T>(initial: T): [T, (value: T) => void] => {
-  const state = [];
-
-  state[0] = initial;
-  state[1] = (next: T) => {
-    state[0] = next;
-    console.log(state);
-  };
-
-  // @ts-ignore
-  return state;
-};
-
-// Replaces <body /> with rendered tree.
-export const render = (tree: RElement) => {
-  const result = _render(tree);
-  document.body.innerHTML = "";
-  document.body.appendChild(result);
+  container.appendChild(append);
 };
