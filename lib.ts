@@ -17,20 +17,8 @@ export type RNode = {
   props: Props;
   descendants: RNode[];
   // dom: Node;
+  hooks?: any[];
   name?: string;
-
-  // // Tree structure.
-  // parent: RNode;
-  // descendants: RNode[];
-  // // HTML DOM element.
-  // dom: Node;
-  // // Props and state.
-  // props: Props;
-  // state: any;
-  // // Component | HTML tag | text node content.
-  // type: RenderFunction | string;
-  // // Previous node in this place in tree.
-  // oldNode: RNode;
 };
 
 export const createElement = (
@@ -71,8 +59,14 @@ const getName = (type: RenderFunction | string) => {
   }
 };
 
+let currentNode: RNode = null;
+let hookIndex = 0;
+
 // Update tree.
 const update = (node: RNode, element: RElement) => {
+  // TODO TODO TODO
+  // Find a way to remove `element` from args.
+
   if (typeof element === "string") {
     // TODO
     // This is when element is a string.
@@ -80,10 +74,13 @@ const update = (node: RNode, element: RElement) => {
   }
 
   let elements: RElement[];
-  if (typeof element.type === "function") {
+  if (typeof node.type === "function") {
+    currentNode = node;
+    hookIndex = 0;
     // This will be always one element array because this implementation doesn't
     // support returning arrays from render functions.
-    elements = [element.type(element.props)];
+    elements = [node.type(node.props)];
+    hookIndex = 0;
   } else if (typeof element.type === "string") {
     const { children } = element.props;
     if (typeof children !== "string") {
@@ -110,17 +107,21 @@ const update = (node: RNode, element: RElement) => {
 
     if (a && b && a.type === b.type) {
       // Update
-      console.log("> update");
+      a.props = b.props;
       update(a, b);
     } else if (!a) {
       // Add
-      console.log("> add");
+      // console.log("> add");
       const newNode: RNode = {
         props: b.props,
         type: b.type,
         name: getName(b.type),
         descendants: [],
       };
+
+      if (typeof b.type === "function") {
+        newNode.hooks = [];
+      }
 
       node.descendants.push(newNode);
 
@@ -132,6 +133,25 @@ const update = (node: RNode, element: RElement) => {
   });
 };
 
+export const useState = <T>(initial: T): [T, (next: T) => void] => {
+  console.log("useState");
+
+  if (currentNode.hooks[hookIndex] === undefined) {
+    currentNode.hooks[hookIndex] = initial;
+  }
+
+  const value = currentNode.hooks[hookIndex];
+
+  const setState = (next: T) => {
+    currentNode.hooks[hookIndex] = next;
+    update(currentNode, null);
+  };
+
+  hookIndex += 1;
+
+  return [value, setState];
+};
+
 // Commit.
 const sync = (node: RNode) => {
   // Check if node needs to be added, replaced etc.
@@ -141,7 +161,9 @@ export let rootNode: RNode = null;
 
 export const render = (element: RElement, container: HTMLElement) => {
   rootNode = {
-    props: null,
+    props: {
+      children: [element],
+    },
     type: container.tagName.toLowerCase(),
     // dom: container,
     descendants: [],
@@ -153,5 +175,5 @@ export const render = (element: RElement, container: HTMLElement) => {
   // 2. Propagate changes to DOM.
   sync(rootNode);
 
-  console.log(JSON.stringify(rootNode, null, 2));
+  // console.log(JSON.stringify(rootNode, null, 2));
 };

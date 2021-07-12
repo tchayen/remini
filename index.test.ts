@@ -1,4 +1,4 @@
-import { createElement as c, render, RNode, rootNode } from "./lib";
+import { createElement as c, render, RNode, rootNode, useState } from "./lib";
 
 describe("createElement", () => {
   it("works for simple HTML", () => {
@@ -83,7 +83,7 @@ describe("render", () => {
   //   );
   // });
 
-  it("", () => {
+  it("works", () => {
     const root = document.createElement("div");
     document.body.appendChild(root);
 
@@ -102,7 +102,29 @@ describe("render", () => {
     render(tree, root);
 
     const expected: RNode = {
-      props: null,
+      props: {
+        children: [
+          {
+            type: "div",
+            props: {
+              children: [
+                {
+                  type: Counter,
+                  props: {
+                    children: "Counter: ",
+                  },
+                },
+                {
+                  type: "h1",
+                  props: {
+                    children: "Test",
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
       type: "div",
       descendants: [
         {
@@ -153,6 +175,7 @@ describe("render", () => {
               ],
             },
           ],
+          hooks: [],
         },
         {
           props: {
@@ -166,5 +189,41 @@ describe("render", () => {
     };
 
     expect(rootNode).toStrictEqual(expected);
+  });
+
+  it("works with state", () => {
+    const getPrintedNumber = () => {
+      return rootNode.descendants[0].descendants[0].descendants[1].props
+        .children;
+    };
+
+    let update;
+
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const Counter = ({ children }) => {
+      const [value, setValue] = useState(0);
+
+      update = () => setValue(value + 1);
+
+      return c("div", {}, [
+        c("span", {}, children),
+        c("span", { style: "color: #ff0000" }, `${value}`),
+      ]);
+    };
+
+    const tree = c("div", {}, [
+      c(Counter, {}, "Counter: "),
+      c("h1", {}, "Test"),
+    ]);
+
+    render(tree, root);
+
+    expect(getPrintedNumber()).toBe("0");
+
+    update();
+
+    expect(getPrintedNumber()).toBe("1");
   });
 });
