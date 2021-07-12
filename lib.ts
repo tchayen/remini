@@ -18,7 +18,7 @@ export type RNode =
       type: RenderFunction | string;
       props: Props;
       descendants: RNode[];
-      // dom: Node;
+      dom?: Node;
       hooks?: any[];
       name?: string;
     }
@@ -38,24 +38,26 @@ export const createElement = (
   };
 };
 
-const isProp = (key: string) => key !== "chidren" && !key.startsWith("on");
+const isEvent = (key: string) => key.startsWith("on");
+const isProp = (key: string) => key !== "children" && !isEvent(key);
 
-// const createDom = (node: RNode) => {
-//   // // TODO: update same elements etc
-//   let dom;
-//   if (node.type === "text") {
-//     dom = document.createTextNode(node.props.children);
-//   } else if (typeof node.type === "string") {
-//     dom = document.createElement(node.type);
+const updateDom = (node: RNode, prevProps: any, props: any) => {
+  if (typeof node.type !== "string" || node.type === null) {
+    throw new Error(`Tried to create DOM node from unrecognized node.`);
+  }
 
-//     Object.entries(node.props)
-//       .filter(([key]) => isProp(key))
-//       .forEach(([key, value]) => {
-//         dom.setAttribute(key, value as string);
-//       });
-//   }
-//   return dom;
-// };
+  const html = document.createElement(node.type);
+
+  Object.entries(props).forEach(([key, value]) => {
+    if (prevProps[key] && isEvent(key)) {
+      node.dom?.removeEventListener(key, prevProps[key]);
+    }
+
+    html.setAttribute(key, value as string);
+  });
+
+  return html;
+};
 
 const getName = (type: RenderFunction | string) => {
   if (typeof type === "string") {
@@ -127,6 +129,18 @@ const update = (node: RNode, element: RElement) => {
         name: getName(expected.type),
         descendants: [],
       };
+
+      // newNode.dom = updateDom(
+      //   newNode,
+      //   current.type === null ? {} : current.props,
+      //   expected.props
+      // );
+      // node.dom.appendChild(newNode.dom);
+      // if (typeof newNode.props.children === "string") {
+      //   newNode.dom.appendChild(
+      //     document.createTextNode(newNode.props.children)
+      //   );
+      // }
 
       if (typeof expected.type === "function") {
         newNode.hooks = [];
@@ -206,7 +220,7 @@ export const render = (element: RElement, container: HTMLElement) => {
       children: [element],
     },
     type: container.tagName.toLowerCase(),
-    // dom: container,
+    dom: container,
     descendants: [],
   };
 

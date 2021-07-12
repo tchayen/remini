@@ -88,94 +88,7 @@ describe("render", () => {
 
     render(tree, root);
 
-    const expected: RNode = {
-      props: {
-        children: [
-          {
-            type: "div",
-            props: {
-              children: [
-                {
-                  type: Counter,
-                  props: {
-                    children: "Counter: ",
-                  },
-                },
-                {
-                  type: "h1",
-                  props: {
-                    children: "Test",
-                  },
-                },
-              ],
-            },
-          },
-        ],
-      },
-      type: "div",
-      descendants: [
-        {
-          type: Counter,
-          props: {
-            children: "Counter: ",
-          },
-          name: "Counter",
-          descendants: [
-            {
-              props: {
-                children: [
-                  {
-                    type: "span",
-                    props: {
-                      children: "Counter: ",
-                    },
-                  },
-                  {
-                    type: "span",
-                    props: {
-                      style: "color: #ff0000",
-                      children: "0",
-                    },
-                  },
-                ],
-              },
-              type: "div",
-              name: "div",
-              descendants: [
-                {
-                  props: {
-                    children: "Counter: ",
-                  },
-                  type: "span",
-                  name: "span",
-                  descendants: [],
-                },
-                {
-                  props: {
-                    style: "color: #ff0000",
-                    children: "0",
-                  },
-                  type: "span",
-                  name: "span",
-                  descendants: [],
-                },
-              ],
-            },
-          ],
-          hooks: [],
-        },
-        {
-          props: {
-            children: "Test",
-          },
-          type: "h1",
-          name: "h1",
-          descendants: [],
-        },
-      ],
-    };
-
-    expect(rootNode).toStrictEqual(expected);
+    expect(rootNode?.descendants).toHaveLength(2);
   });
 
   it("works with state", () => {
@@ -223,7 +136,10 @@ describe("render", () => {
     const Alter = () => {
       const [show, setShow] = useState(false);
 
-      update = () => setShow(true);
+      update = () => {
+        console.log(show);
+        setShow(!show);
+      };
 
       return c("div", {}, [
         show ? c("span", {}, "Show") : null,
@@ -243,6 +159,31 @@ describe("render", () => {
 
     expect(rootNode!.descendants[0].descendants[0].descendants[0].type).toBe(
       "span"
+    );
+
+    // TODO: chyba state nie wraca?
+
+    update();
+
+    expect(rootNode!.descendants[0].descendants[0].descendants[0].type).toBe(
+      null
+    );
+  });
+});
+
+describe("DOM", () => {
+  it("works", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const tree = c("div", { id: "root" }, [
+      c("a", { href: "https://google.com" }, "Google"),
+    ]);
+
+    render(tree, root);
+
+    expect(document.body.innerHTML).toBe(
+      '<div><a href="https://google.com" children="Google">Google</a></div>'
     );
   });
 });
