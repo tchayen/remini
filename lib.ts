@@ -10,16 +10,22 @@ export type RElement =
       type: RenderFunction | string;
       props: Props;
     }
-  | string;
+  | string
+  | null;
 
-export type RNode = {
-  type: RenderFunction | string;
-  props: Props;
-  descendants: RNode[];
-  // dom: Node;
-  hooks?: any[];
-  name?: string;
-};
+export type RNode =
+  | {
+      type: RenderFunction | string;
+      props: Props;
+      descendants: RNode[];
+      // dom: Node;
+      hooks?: any[];
+      name?: string;
+    }
+  | {
+      type: null;
+      descendants: RNode[];
+    };
 
 export const createElement = (
   component: RenderFunction | string,
@@ -59,28 +65,27 @@ const getName = (type: RenderFunction | string) => {
   }
 };
 
-let currentNode: RNode = null;
+let currentNode: RNode | null = null;
 let hookIndex = 0;
 
-// Update tree.
 const update = (node: RNode, element: RElement) => {
-  // TODO TODO TODO
-  // Find a way to remove `element` from args.
-
   if (typeof element === "string") {
     // TODO
     // This is when element is a string.
     return;
   }
 
-  let elements: RElement[];
-  if (typeof node.type === "function") {
+  let elements: RElement[] = [];
+  if (typeof node.type === "function" && node.type !== null) {
     currentNode = node;
     hookIndex = 0;
     // This will be always one element array because this implementation doesn't
     // support returning arrays from render functions.
     elements = [node.type(node.props)];
     hookIndex = 0;
+  } else if (element === null) {
+    // Empty node?
+    console.log("Element is null");
   } else if (typeof element.type === "string") {
     const { children } = element.props;
     if (typeof children !== "string") {
@@ -90,6 +95,8 @@ const update = (node: RNode, element: RElement) => {
       // This is when children array is a single string.
       return;
     }
+  } else {
+    throw new Error("What is this?");
   }
 
   // Reconcile.
@@ -99,42 +106,72 @@ const update = (node: RNode, element: RElement) => {
     pairs.push([node.descendants[i], elements[i]]);
   }
 
-  pairs.forEach(([a, b]) => {
-    if (typeof b === "string") {
+  pairs.forEach(([current, expected]) => {
+    if (typeof expected === "string") {
       // TODO ??
       return;
     }
 
-    if (a && b && a.type === b.type) {
-      // Update
-      a.props = b.props;
-      update(a, b);
-    } else if (!a) {
-      // Add
-      // console.log("> add");
-      const newNode: RNode = {
-        props: b.props,
-        type: b.type,
-        name: getName(b.type),
+    if (current && expected && current.type === expected.type) {
+      // UPDATE
+      // console.log("> update");
+      current.props = expected.props;
+      update(current, expected);
+    } else if (current && expected && current.type !== expected.type) {
+      // REPLACE
+      // console.log("> replace");
+
+      let newNode: RNode = {
+        props: expected.props,
+        type: expected.type,
+        name: getName(expected.type),
         descendants: [],
       };
 
-      if (typeof b.type === "function") {
+      if (typeof expected.type === "function") {
         newNode.hooks = [];
       }
 
-      node.descendants.push(newNode);
+      node.descendants[node.descendants.indexOf(current)] = newNode;
+      update(newNode, expected);
+    } else if (!current) {
+      // ADD
+      // console.log("> add");
 
-      update(newNode, b);
-    } else if (!b) {
-      // Remove
-      console.log("> remove");
+      let newNode: RNode;
+      if (expected === null) {
+        newNode = {
+          type: null,
+          descendants: [],
+        };
+      } else {
+        newNode = {
+          props: expected.props,
+          type: expected.type,
+          name: getName(expected.type),
+          descendants: [],
+        };
+
+        if (typeof expected.type === "function") {
+          newNode.hooks = [];
+        }
+      }
+
+      node.descendants.push(newNode);
+      update(newNode, expected);
+    } else if (!expected) {
+      // console.log("> remove");
+      // REMOVE
+      // TODO test
+      node.descendants.splice(node.descendants.indexOf(current), 1);
     }
   });
 };
 
 export const useState = <T>(initial: T): [T, (next: T) => void] => {
-  console.log("useState");
+  if (!currentNode || currentNode.type === null || !currentNode.hooks) {
+    throw new Error("Executing useState for non-function element.");
+  }
 
   if (currentNode.hooks[hookIndex] === undefined) {
     currentNode.hooks[hookIndex] = initial;
@@ -143,6 +180,10 @@ export const useState = <T>(initial: T): [T, (next: T) => void] => {
   const value = currentNode.hooks[hookIndex];
 
   const setState = (next: T) => {
+    if (!currentNode || currentNode.type === null || !currentNode.hooks) {
+      throw new Error("Executing useState for non-function element.");
+    }
+
     currentNode.hooks[hookIndex] = next;
     update(currentNode, null);
   };
@@ -157,7 +198,7 @@ const sync = (node: RNode) => {
   // Check if node needs to be added, replaced etc.
 };
 
-export let rootNode: RNode = null;
+export let rootNode: RNode | null = null;
 
 export const render = (element: RElement, container: HTMLElement) => {
   rootNode = {

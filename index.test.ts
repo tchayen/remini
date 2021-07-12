@@ -36,7 +36,7 @@ describe("createElement", () => {
   });
 
   it("works with components", () => {
-    const Title = ({ children }) => {
+    const Title = ({ children }: { children: string }) => {
       return c("h1", {}, [children]);
     };
 
@@ -70,24 +70,11 @@ describe("createElement", () => {
 });
 
 describe("render", () => {
-  // it("works", () => {
-  //   const root = document.createElement("div");
-  //   document.body.appendChild(root);
-
-  //   const tree = c("a", { href: "https://google.com" }, ["Google"]);
-
-  //   render(tree, root);
-
-  //   expect(document.body.innerHTML).toBe(
-  //     '<div><a href="https://google.com" children="Google">Google</a></div>'
-  //   );
-  // });
-
   it("works", () => {
     const root = document.createElement("div");
     document.body.appendChild(root);
 
-    const Counter = ({ children }) => {
+    const Counter = ({ children }: { children: string }) => {
       return c("div", {}, [
         c("span", {}, children),
         c("span", { style: "color: #ff0000" }, "0"),
@@ -193,7 +180,7 @@ describe("render", () => {
 
   it("works with state", () => {
     const getPrintedNumber = () => {
-      return rootNode.descendants[0].descendants[0].descendants[1].props
+      return rootNode!.descendants[0].descendants[0].descendants[1].props
         .children;
     };
 
@@ -202,7 +189,7 @@ describe("render", () => {
     const root = document.createElement("div");
     document.body.appendChild(root);
 
-    const Counter = ({ children }) => {
+    const Counter = ({ children }: { children: string }) => {
       const [value, setValue] = useState(0);
 
       update = () => setValue(value + 1);
@@ -225,5 +212,37 @@ describe("render", () => {
     update();
 
     expect(getPrintedNumber()).toBe("1");
+  });
+
+  it("works with node removal", () => {
+    let update;
+
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const Alter = () => {
+      const [show, setShow] = useState(false);
+
+      update = () => setShow(true);
+
+      return c("div", {}, [
+        show ? c("span", {}, "Show") : null,
+        c("div", {}, "This is always here"),
+      ]);
+    };
+
+    const tree = c("div", {}, [c(Alter, {}, [])]);
+
+    render(tree, root);
+
+    expect(rootNode!.descendants[0].descendants[0].descendants[0].type).toBe(
+      null
+    );
+
+    update();
+
+    expect(rootNode!.descendants[0].descendants[0].descendants[0].type).toBe(
+      "span"
+    );
   });
 });
