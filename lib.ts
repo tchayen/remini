@@ -38,25 +38,66 @@ export const createElement = (
   };
 };
 
-const isEvent = (key: string) => key.startsWith("on");
-const isProp = (key: string) => key !== "children" && !isEvent(key);
+const isEvent = (key: string) => !!key.match(new RegExp("on[A-Z].*"));
 
-const updateDom = (node: RNode, prevProps: any, props: any) => {
-  if (typeof node.type !== "string" || node.type === null) {
-    throw new Error(`Tried to create DOM node from unrecognized node.`);
+const insertDom = (parent: RNode, element: RElement) => {
+  if (
+    parent.type === null ||
+    element === null ||
+    typeof element === "string" ||
+    typeof element.type === "function"
+  ) {
+    throw new Error("This is not supposed to happen");
   }
 
-  const html = document.createElement(node.type);
+  const html = document.createElement(element.type);
 
-  Object.entries(props).forEach(([key, value]) => {
-    if (prevProps[key] && isEvent(key)) {
-      node.dom?.removeEventListener(key, prevProps[key]);
+  Object.entries(element.props).forEach(([key, value]) => {
+    if (key === "children") {
+      // Skip.
+    } else if (isEvent(key)) {
+      // TODO
+    } else {
+      html.setAttribute(key, value as string);
     }
-
-    html.setAttribute(key, value as string);
   });
 
-  return html;
+  parent.dom?.appendChild(html);
+
+  if (typeof element.props.children === "string") {
+    html.appendChild(document.createTextNode(element.props.children));
+  }
+};
+
+// Update two DOM nodes of the same HTML tag.
+const updateDom = (current: RNode, expected: RElement) => {
+  if (current.type === null) {
+    throw new Error("Cannot update null node.");
+  }
+
+  if (!current.dom) {
+    throw new Error("Tried updating DOM of a node without DOM representation.");
+  }
+
+  const html = current.dom as HTMLElement;
+
+  Object.entries(current.props).forEach(([key, value]) => {
+    if (key === "children") {
+      // Skip.
+    } else if (isEvent(key)) {
+      // TODO
+    } else {
+      html.setAttribute(key, value as string);
+    }
+  });
+};
+
+const removeDom = (node: RNode) => {
+  if (node.type === null) {
+    throw new Error("Null node cannot be removed from DOM.");
+  }
+
+  node.dom?.parentNode?.removeChild(node.dom);
 };
 
 const getName = (type: RenderFunction | string) => {
@@ -130,18 +171,6 @@ const update = (node: RNode, element: RElement) => {
         descendants: [],
       };
 
-      // newNode.dom = updateDom(
-      //   newNode,
-      //   current.type === null ? {} : current.props,
-      //   expected.props
-      // );
-      // node.dom.appendChild(newNode.dom);
-      // if (typeof newNode.props.children === "string") {
-      //   newNode.dom.appendChild(
-      //     document.createTextNode(newNode.props.children)
-      //   );
-      // }
-
       if (typeof expected.type === "function") {
         newNode.hooks = [];
       }
@@ -166,6 +195,10 @@ const update = (node: RNode, element: RElement) => {
           descendants: [],
         };
 
+        if (typeof expected.type === "string") {
+          insertDom(node, expected);
+        }
+
         if (typeof expected.type === "function") {
           newNode.hooks = [];
         }
@@ -177,7 +210,20 @@ const update = (node: RNode, element: RElement) => {
       // console.log("> remove");
       // REMOVE
       // TODO test
-      node.descendants.splice(node.descendants.indexOf(current), 1);
+
+      const indexOfCurrent = node.descendants.indexOf(current);
+      removeDom(node.descendants[indexOfCurrent]);
+
+      if (expected === null) {
+        const newNode: RNode = {
+          type: null,
+          descendants: [],
+        };
+
+        node.descendants[indexOfCurrent] = newNode;
+      } else {
+        node.descendants.splice(indexOfCurrent, 1);
+      }
     }
   });
 };

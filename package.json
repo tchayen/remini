@@ -5,7 +5,8 @@
   "license": "MIT",
   "scripts": {
     "start": "parcel index.html",
-    "test": "jest --watch --env=jsdom"
+    "test": "jest --watch --env=jsdom",
+    "build": "parcel build index.html"
   },
   "devDependencies": {
     "@babel/core": "^7.14.6",

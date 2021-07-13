@@ -161,8 +161,6 @@ describe("render", () => {
       "span"
     );
 
-    // TODO: chyba state nie wraca?
-
     update();
 
     expect(rootNode!.descendants[0].descendants[0].descendants[0].type).toBe(
@@ -172,6 +170,10 @@ describe("render", () => {
 });
 
 describe("DOM", () => {
+  beforeEach(() => {
+    document.body.innerHTML = "";
+  });
+
   it("works", () => {
     const root = document.createElement("div");
     document.body.appendChild(root);
@@ -183,7 +185,7 @@ describe("DOM", () => {
     render(tree, root);
 
     expect(document.body.innerHTML).toBe(
-      '<div><a href="https://google.com" children="Google">Google</a></div>'
+      '<div><a href="https://google.com">Google</a></div>'
     );
   });
 });
