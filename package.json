@@ -1,12 +1,12 @@
 {
   "name": "remini",
   "version": "0.0.1",
-  "main": "index.ts",
+  "main": "lib.js",
   "license": "MIT",
   "scripts": {
     "start": "parcel index.html",
     "test": "jest --watch --env=jsdom",
-    "build": "parcel build index.html"
+    "build": "parcel build lib.ts"
   },
   "devDependencies": {
     "@babel/core": "^7.14.6",

@@ -17,6 +17,7 @@ export type RNode =
   | {
       type: RenderFunction | string;
       props: Props;
+      parent: RNode | null;
       descendants: RNode[];
       dom?: Node;
       hooks?: any[];
@@ -24,6 +25,7 @@ export type RNode =
     }
   | {
       type: null;
+      parent: RNode | null;
       descendants: RNode[];
     };
 
@@ -39,10 +41,11 @@ export const createElement = (
 };
 
 const isEvent = (key: string) => !!key.match(new RegExp("on[A-Z].*"));
+const eventToKeyword = (key: string) => key.replace("on", "").toLowerCase();
 
-const insertDom = (parent: RNode, element: RElement) => {
+const insertDom = (parent: Node, node: RNode, element: RElement) => {
   if (
-    parent.type === null ||
+    node.type === null ||
     element === null ||
     typeof element === "string" ||
     typeof element.type === "function"
@@ -56,13 +59,14 @@ const insertDom = (parent: RNode, element: RElement) => {
     if (key === "children") {
       // Skip.
     } else if (isEvent(key)) {
-      // TODO
+      html.addEventListener(eventToKeyword(key), value);
     } else {
       html.setAttribute(key, value as string);
     }
   });
 
-  parent.dom?.appendChild(html);
+  parent.appendChild(html);
+  node.dom = html;
 
   if (typeof element.props.children === "string") {
     html.appendChild(document.createTextNode(element.props.children));
@@ -71,6 +75,10 @@ const insertDom = (parent: RNode, element: RElement) => {
 
 // Update two DOM nodes of the same HTML tag.
 const updateDom = (current: RNode, expected: RElement) => {
+  if (expected === null || typeof expected == "string") {
+    throw new Error("No!");
+  }
+
   if (current.type === null) {
     throw new Error("Cannot update null node.");
   }
@@ -81,23 +89,61 @@ const updateDom = (current: RNode, expected: RElement) => {
 
   const html = current.dom as HTMLElement;
 
-  Object.entries(current.props).forEach(([key, value]) => {
+  Object.keys(current.props).forEach((key) => {
     if (key === "children") {
       // Skip.
     } else if (isEvent(key)) {
-      // TODO
+      html.removeEventListener(eventToKeyword(key), current.props[key]);
     } else {
-      html.setAttribute(key, value as string);
+      // Prop will be removed.
+      if (!expected.props[key]) {
+        html.removeAttribute(key);
+      }
+
+      // Prop will be updated.
+      if (expected.props[key]) {
+        html.setAttribute(key, expected.props[key] as string);
+      }
     }
   });
+
+  Object.keys(expected.props).forEach((key) => {
+    if (key === "children") {
+      // Skip.
+    } else if (isEvent(key)) {
+      html.addEventListener(eventToKeyword(key), expected.props[key]);
+    } else {
+      // Prop will be added.
+      if (!current.props[key]) {
+        html.setAttribute(key, expected.props[key] as string);
+      }
+    }
+  });
+
+  if (
+    typeof current.props.children === "string" &&
+    typeof expected.props.children === "string"
+  ) {
+    if (current.props.children !== expected.props.children) {
+      html.firstChild?.replaceWith(
+        document.createTextNode(expected.props.children)
+      );
+    }
+  }
 };
 
-const removeDom = (node: RNode) => {
-  if (node.type === null) {
-    throw new Error("Null node cannot be removed from DOM.");
+const removeDom = (node: Node) => {
+  node.parentNode?.removeChild(node);
+};
+
+const findClosestDom = (node: RNode) => {
+  let current = node;
+
+  while (current.type !== null && !current.dom && current.parent) {
+    current = current.parent;
   }
 
-  node.dom?.parentNode?.removeChild(node.dom);
+  return current.dom;
 };
 
 const getName = (type: RenderFunction | string) => {
@@ -128,7 +174,6 @@ const update = (node: RNode, element: RElement) => {
     hookIndex = 0;
   } else if (element === null) {
     // Empty node?
-    console.log("Element is null");
   } else if (typeof element.type === "string") {
     const { children } = element.props;
     if (typeof children !== "string") {
@@ -158,6 +203,11 @@ const update = (node: RNode, element: RElement) => {
     if (current && expected && current.type === expected.type) {
       // UPDATE
       // console.log("> update");
+
+      if (typeof current.type === "string") {
+        updateDom(current, expected);
+      }
+
       current.props = expected.props;
       update(current, expected);
     } else if (current && expected && current.type !== expected.type) {
@@ -168,8 +218,16 @@ const update = (node: RNode, element: RElement) => {
         props: expected.props,
         type: expected.type,
         name: getName(expected.type),
+        parent: node,
         descendants: [],
       };
+
+      if (typeof expected.type === "string") {
+        if (current.type !== null && current.dom) {
+          removeDom(current.dom);
+        }
+        insertDom(findClosestDom(node), newNode, expected);
+      }
 
       if (typeof expected.type === "function") {
         newNode.hooks = [];
@@ -185,6 +243,7 @@ const update = (node: RNode, element: RElement) => {
       if (expected === null) {
         newNode = {
           type: null,
+          parent: node,
           descendants: [],
         };
       } else {
@@ -192,11 +251,12 @@ const update = (node: RNode, element: RElement) => {
           props: expected.props,
           type: expected.type,
           name: getName(expected.type),
+          parent: node,
           descendants: [],
         };
 
         if (typeof expected.type === "string") {
-          insertDom(node, expected);
+          insertDom(findClosestDom(node), newNode, expected);
         }
 
         if (typeof expected.type === "function") {
@@ -212,11 +272,19 @@ const update = (node: RNode, element: RElement) => {
       // TODO test
 
       const indexOfCurrent = node.descendants.indexOf(current);
-      removeDom(node.descendants[indexOfCurrent]);
+
+      if (current.type === null) {
+        return;
+      }
+
+      if (current.dom) {
+        removeDom(current.dom);
+      }
 
       if (expected === null) {
         const newNode: RNode = {
           type: null,
+          parent: node,
           descendants: [],
         };
 
@@ -253,11 +321,6 @@ export const useState = <T>(initial: T): [T, (next: T) => void] => {
   return [value, setState];
 };
 
-// Commit.
-const sync = (node: RNode) => {
-  // Check if node needs to be added, replaced etc.
-};
-
 export let rootNode: RNode | null = null;
 
 export const render = (element: RElement, container: HTMLElement) => {
@@ -267,14 +330,12 @@ export const render = (element: RElement, container: HTMLElement) => {
     },
     type: container.tagName.toLowerCase(),
     dom: container,
+    parent: null,
     descendants: [],
   };
 
   // 1. Update tree.
   update(rootNode, element);
-
-  // 2. Propagate changes to DOM.
-  sync(rootNode);
 
   // console.log(JSON.stringify(rootNode, null, 2));
 };

@@ -137,7 +137,6 @@ describe("render", () => {
       const [show, setShow] = useState(false);
 
       update = () => {
-        console.log(show);
         setShow(!show);
       };
 
