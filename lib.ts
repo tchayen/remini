@@ -143,6 +143,14 @@ const findClosestDom = (node: RNode) => {
     current = current.parent;
   }
 
+  if (current.type === null) {
+    throw new Error("Parent node was null.");
+  }
+
+  if (current.dom === undefined) {
+    throw new Error("Node is missing DOM.");
+  }
+
   return current.dom;
 };
 
@@ -334,8 +342,5 @@ export const render = (element: RElement, container: HTMLElement) => {
     descendants: [],
   };
 
-  // 1. Update tree.
   update(rootNode, element);
-
-  // console.log(JSON.stringify(rootNode, null, 2));
 };
