@@ -127,7 +127,7 @@ describe("render", () => {
     expect(getPrintedNumber()).toBe("1");
   });
 
-  it("works with node removal", () => {
+  it("works with node replacing", () => {
     let update;
 
     const root = document.createElement("div");
@@ -165,6 +165,10 @@ describe("render", () => {
     expect(rootNode!.descendants[0].descendants[0].descendants[0].type).toBe(
       null
     );
+
+    it("works with node removal", () => {
+      // TODO
+    });
   });
 });
 
@@ -173,7 +177,7 @@ describe("DOM", () => {
     document.body.innerHTML = "";
   });
 
-  it("works", () => {
+  it("works with basic elements", () => {
     const root = document.createElement("div");
     document.body.appendChild(root);
 
@@ -186,5 +190,17 @@ describe("DOM", () => {
     expect(document.body.innerHTML).toBe(
       '<div><a href="https://google.com">Google</a></div>'
     );
+  });
+
+  it("works with components", () => {
+    // TODO
+  });
+
+  it("works with updates", () => {
+    // TODO
+  });
+
+  it("works with event listeners", () => {
+    // TODO
   });
 });

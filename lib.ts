@@ -210,8 +210,6 @@ const update = (node: RNode, element: RElement) => {
 
     if (current && expected && current.type === expected.type) {
       // UPDATE
-      // console.log("> update");
-
       if (typeof current.type === "string") {
         updateDom(current, expected);
       }
@@ -220,8 +218,6 @@ const update = (node: RNode, element: RElement) => {
       update(current, expected);
     } else if (current && expected && current.type !== expected.type) {
       // REPLACE
-      // console.log("> replace");
-
       let newNode: RNode = {
         props: expected.props,
         type: expected.type,
@@ -245,8 +241,6 @@ const update = (node: RNode, element: RElement) => {
       update(newNode, expected);
     } else if (!current) {
       // ADD
-      // console.log("> add");
-
       let newNode: RNode;
       if (expected === null) {
         newNode = {
@@ -275,10 +269,7 @@ const update = (node: RNode, element: RElement) => {
       node.descendants.push(newNode);
       update(newNode, expected);
     } else if (!expected) {
-      // console.log("> remove");
       // REMOVE
-      // TODO test
-
       const indexOfCurrent = node.descendants.indexOf(current);
 
       if (current.type === null) {
