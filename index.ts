@@ -8,7 +8,7 @@ const Counter = () => {
   };
 
   const dom = c("div", {}, [
-    c("span", {}, `${value}`),
+    c("div", {}, `${value}`),
     c("button", { onClick }, "Click"),
   ]);
 

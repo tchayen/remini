@@ -93,11 +93,15 @@ describe("render", () => {
 
   it("works with state", () => {
     const getPrintedNumber = () => {
-      return rootNode!.descendants[0].descendants[0].descendants[1].props
-        .children;
+      const node = rootNode!.descendants[0].descendants[0].descendants[1];
+      if (node.type === null) {
+        throw new Error("Encountered null node.");
+      }
+
+      return node.props.children;
     };
 
-    let update;
+    let update = () => {};
 
     const root = document.createElement("div");
     document.body.appendChild(root);
@@ -128,7 +132,7 @@ describe("render", () => {
   });
 
   it("works with node replacing", () => {
-    let update;
+    let update = () => {};
 
     const root = document.createElement("div");
     document.body.appendChild(root);
@@ -165,10 +169,10 @@ describe("render", () => {
     expect(rootNode!.descendants[0].descendants[0].descendants[0].type).toBe(
       null
     );
+  });
 
-    it("works with node removal", () => {
-      // TODO
-    });
+  it("works with node removal", () => {
+    // TODO
   });
 });
 
@@ -193,14 +197,82 @@ describe("DOM", () => {
   });
 
   it("works with components", () => {
-    // TODO
-  });
+    const root = document.createElement("div");
+    document.body.appendChild(root);
 
-  it("works with updates", () => {
-    // TODO
+    const Title = ({ children }: { children: string }) => {
+      return c("h1", {}, children);
+    };
+
+    const tree = c("div", {}, [
+      c(Title, {}, "Hello world"),
+      c("span", {}, "Text"),
+    ]);
+
+    render(tree, root);
+
+    expect(document.body.innerHTML).toBe(
+      "<div><h1>Hello world</h1><span>Text</span></div>"
+    );
   });
 
   it("works with event listeners", () => {
-    // TODO
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const onClick = jest.fn();
+
+    const Click = () => {
+      return c("div", {}, [c("button", { id: "button", onClick }, "Click")]);
+    };
+
+    const tree = c("div", {}, [c(Click, {}, [])]);
+
+    render(tree, root);
+
+    const button = document.getElementById("button");
+
+    if (button === null) {
+      throw new Error("Unexpected null.");
+    }
+
+    button.click();
+
+    expect(onClick).toHaveBeenCalled();
+  });
+
+  it("works with updates", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const Counter = () => {
+      const [value, setValue] = useState(0);
+
+      const onClick = () => {
+        setValue(value + 1);
+      };
+
+      return c("div", {}, [
+        c("span", { id: "value" }, `${value}`),
+        c("button", { id: "button", onClick }, "Click"),
+      ]);
+    };
+
+    const tree = c("div", {}, [c(Counter, {}, [])]);
+
+    render(tree, root);
+
+    const value = document.getElementById("value");
+    const button = document.getElementById("button");
+
+    if (value == null || button === null) {
+      throw new Error("Unexpected null.");
+    }
+
+    expect(value.innerHTML).toBe("0");
+
+    button.click();
+
+    expect(value.innerHTML).toBe("1");
   });
 });
