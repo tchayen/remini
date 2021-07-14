@@ -181,6 +181,38 @@ describe("useState", () => {
     document.body.innerHTML = "";
   });
 
+  it("doesn't take immediate effect on state value", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    let update = () => {};
+    let nextValue;
+
+    const App = () => {
+      const [value, setValue] = useState(0);
+
+      update = () => {
+        setValue(value + 1);
+        nextValue = value;
+      };
+
+      return c("div", {}, [c("span", {}, `${value}`)]);
+    };
+
+    render(c("div", {}, [c(App, {}, [])]), root);
+
+    expect(document.body.innerHTML).toBe(
+      "<div><div><span>0</span></div></div>"
+    );
+
+    update();
+
+    expect(nextValue).toBe(0);
+    expect(document.body.innerHTML).toBe(
+      "<div><div><span>1</span></div></div>"
+    );
+  });
+
   it("can be called more than once", () => {
     const root = document.createElement("div");
     document.body.appendChild(root);
