@@ -7,9 +7,17 @@ const Counter = () => {
     setValue(value + 1);
   };
 
-  const dom = c("div", {}, [
-    c("div", {}, `${value}`),
-    c("button", { onClick }, "Click"),
+  const dom = c("div", { class: "p-10" }, [
+    c("div", { class: "mb-4 text-xl" }, `${value}`),
+    c(
+      "button",
+      {
+        onClick,
+        class:
+          "bg-green-500 hover:bg-green-600 py-2 px-4 rounded-xl text-white font-medium",
+      },
+      "Counter++"
+    ),
   ]);
 
   return dom;

@@ -145,6 +145,8 @@ const update = (node: RNode, element: RElement) => {
           descendants: [],
         };
 
+        // TODO: find out why top level node doesn't get props if it is a tag
+
         if (typeof expected.type === "string") {
           insertDom(findClosestDom(node), newNode, expected);
         }

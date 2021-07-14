@@ -1,7 +1,6 @@
 {
   "name": "remini",
   "version": "0.0.1",
-  "main": "lib.js",
   "source": "lib.ts",
   "module": "dist/lib.js",
   "types": "dist/lib.d.ts",
@@ -19,6 +18,7 @@
     "@parcel/transformer-typescript-types": "2.0.0-beta.2",
     "@types/jest": "^26.0.24",
     "babel-jest": "^27.0.6",
+    "eslint": "^7.30.0",
     "jest": "^27.0.6",
     "parcel": "^2.0.0-beta.2",
     "typescript": "^3.0.0"
