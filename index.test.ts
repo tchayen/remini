@@ -176,6 +176,53 @@ describe("render", () => {
   });
 });
 
+describe("useState", () => {
+  beforeEach(() => {
+    document.body.innerHTML = "";
+  });
+
+  it("can be called more than once", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    let updateA = () => {};
+    let updateB = () => {};
+
+    const App = () => {
+      const [a, setA] = useState("a");
+      const [b, setB] = useState(0);
+
+      updateA = () => {
+        setA("b");
+      };
+
+      updateB = () => {
+        setB(1);
+      };
+
+      return c("div", {}, [c("span", {}, a), c("span", {}, b.toString())]);
+    };
+
+    render(c("div", {}, [c(App, {}, [])]), root);
+
+    expect(document.body.innerHTML).toBe(
+      "<div><div><span>a</span><span>0</span></div></div>"
+    );
+
+    updateA();
+
+    expect(document.body.innerHTML).toBe(
+      "<div><div><span>b</span><span>0</span></div></div>"
+    );
+
+    updateB();
+
+    expect(document.body.innerHTML).toBe(
+      "<div><div><span>b</span><span>1</span></div></div>"
+    );
+  });
+});
+
 describe("DOM", () => {
   beforeEach(() => {
     document.body.innerHTML = "";

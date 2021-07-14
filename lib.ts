@@ -189,23 +189,23 @@ export const useState = <T>(initial: T): [T, (next: T) => void] => {
   }
 
   if (currentNode.hooks[hookIndex] === undefined) {
-    currentNode.hooks[hookIndex] = initial;
+    currentNode.hooks[hookIndex] = { state: initial };
   }
 
-  const value = currentNode.hooks[hookIndex];
+  const hook = currentNode.hooks[hookIndex];
 
   const setState = (next: T) => {
     if (!currentNode || currentNode.type === null || !currentNode.hooks) {
       throw new Error("Executing useState for non-function element.");
     }
 
-    currentNode.hooks[hookIndex] = next;
+    hook.state = next;
     update(currentNode, null);
   };
 
   hookIndex += 1;
 
-  return [value, setState];
+  return [hook.state, setState];
 };
 
 export let rootNode: RNode | null = null;
