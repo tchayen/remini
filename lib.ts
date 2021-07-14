@@ -50,8 +50,8 @@ const getName = (type: RenderFunction | string) => {
   }
 };
 
-let currentNode: RNode | null = null;
-let hookIndex = 0;
+let _currentNode: RNode | null = null;
+let _hookIndex = 0;
 
 const update = (node: RNode, element: RElement) => {
   if (typeof element === "string") {
@@ -62,12 +62,12 @@ const update = (node: RNode, element: RElement) => {
 
   let elements: RElement[] = [];
   if (typeof node.type === "function" && node.type !== null) {
-    currentNode = node;
-    hookIndex = 0;
+    _currentNode = node;
+    _hookIndex = 0;
     // This will be always one element array because this implementation doesn't
     // support returning arrays from render functions.
     elements = [node.type(node.props)];
-    hookIndex = 0;
+    _hookIndex = 0;
   } else if (element === null) {
     // Empty node?
   } else if (typeof element.type === "string") {
@@ -166,6 +166,10 @@ const update = (node: RNode, element: RElement) => {
         return;
       }
 
+      if (typeof current.type === "function") {
+        console.log("useEffect callback on removal");
+      }
+
       if (current.dom) {
         removeDom(current.dom);
       }
@@ -185,35 +189,58 @@ const update = (node: RNode, element: RElement) => {
   });
 };
 
-export const useState = <T>(initial: T): [T, (next: T) => void] => {
-  if (!currentNode || currentNode.type === null || !currentNode.hooks) {
+export const useEffect = (
+  callback: () => void | (() => void),
+  dependencies?: any[]
+) => {
+  if (!_currentNode || _currentNode.type === null || !_currentNode.hooks) {
     throw new Error("Executing useState for non-function element.");
   }
 
-  if (currentNode.hooks[hookIndex] === undefined) {
-    currentNode.hooks[hookIndex] = { state: initial };
+  if (_currentNode.hooks[_hookIndex] === undefined || !dependencies) {
+    const cleanup = callback();
+    _currentNode.hooks[_hookIndex] = { cleanup, dependencies };
+  } else if (dependencies) {
+    for (let i = 0; i < dependencies.length; i++) {
+      if (dependencies[i] !== _currentNode.hooks[_hookIndex].dependencies[i]) {
+        const cleanup = callback();
+        _currentNode.hooks[_hookIndex].cleanup = { cleanup, dependencies };
+      }
+    }
   }
 
-  const hook = currentNode.hooks[hookIndex];
+  _hookIndex += 1;
+};
+
+export const useState = <T>(initial: T): [T, (next: T) => void] => {
+  if (!_currentNode || _currentNode.type === null || !_currentNode.hooks) {
+    throw new Error("Executing useState for non-function element.");
+  }
+
+  if (_currentNode.hooks[_hookIndex] === undefined) {
+    _currentNode.hooks[_hookIndex] = { state: initial };
+  }
+
+  const hook = _currentNode.hooks[_hookIndex];
 
   const setState = (next: T) => {
-    if (!currentNode || currentNode.type === null || !currentNode.hooks) {
+    if (!_currentNode || _currentNode.type === null || !_currentNode.hooks) {
       throw new Error("Executing useState for non-function element.");
     }
 
     hook.state = next;
-    update(currentNode, null);
+    update(_currentNode, null);
   };
 
-  hookIndex += 1;
+  _hookIndex += 1;
 
   return [hook.state, setState];
 };
 
-export let rootNode: RNode | null = null;
+export let _rootNode: RNode | null = null;
 
 export const render = (element: RElement, container: HTMLElement) => {
-  rootNode = {
+  _rootNode = {
     props: {
       children: [element],
     },
@@ -223,5 +250,5 @@ export const render = (element: RElement, container: HTMLElement) => {
     descendants: [],
   };
 
-  update(rootNode, element);
+  update(_rootNode, element);
 };

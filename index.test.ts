@@ -1,4 +1,12 @@
-import { createElement as c, render, RNode, rootNode, useState } from "./lib";
+import {
+  createElement as c,
+  render,
+  useEffect,
+  useState,
+  _rootNode,
+} from "./lib";
+
+jest.useFakeTimers();
 
 describe("createElement", () => {
   it("works for simple HTML", () => {
@@ -88,12 +96,12 @@ describe("render", () => {
 
     render(tree, root);
 
-    expect(rootNode?.descendants).toHaveLength(2);
+    expect(_rootNode?.descendants).toHaveLength(2);
   });
 
   it("works with state", () => {
     const getPrintedNumber = () => {
-      const node = rootNode!.descendants[0].descendants[0].descendants[1];
+      const node = _rootNode!.descendants[0].descendants[0].descendants[1];
       if (node.type === null) {
         throw new Error("Encountered null node.");
       }
@@ -154,19 +162,19 @@ describe("render", () => {
 
     render(tree, root);
 
-    expect(rootNode!.descendants[0].descendants[0].descendants[0].type).toBe(
+    expect(_rootNode!.descendants[0].descendants[0].descendants[0].type).toBe(
       null
     );
 
     update();
 
-    expect(rootNode!.descendants[0].descendants[0].descendants[0].type).toBe(
+    expect(_rootNode!.descendants[0].descendants[0].descendants[0].type).toBe(
       "span"
     );
 
     update();
 
-    expect(rootNode!.descendants[0].descendants[0].descendants[0].type).toBe(
+    expect(_rootNode!.descendants[0].descendants[0].descendants[0].type).toBe(
       null
     );
   });
@@ -252,6 +260,75 @@ describe("useState", () => {
     expect(document.body.innerHTML).toBe(
       "<div><div><span>b</span><span>1</span></div></div>"
     );
+  });
+});
+
+describe("useEffect", () => {
+  it("works with empty deps array", () => {
+    const getDelayedResponse = (): Promise<string> => {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          resolve("response");
+        }, 10);
+      });
+    };
+
+    const mock = jest.fn();
+
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const App = () => {
+      const [, setData] = useState("");
+
+      useEffect(() => {
+        getDelayedResponse().then((response) => {
+          setData(response);
+        });
+        mock();
+      }, []);
+
+      return c("div", {}, [c("span", {}, "Hello")]);
+    };
+
+    const tree = c("div", {}, [c(App, {}, [])]);
+
+    render(tree, root);
+
+    jest.runAllTimers();
+
+    expect(mock).toHaveBeenCalledTimes(1);
+  });
+
+  it("works with no deps array", () => {
+    let update = () => {};
+    const mock = jest.fn();
+
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const App = () => {
+      const [, setData] = useState("");
+      console.log("aaaa");
+
+      update = () => setData("123");
+
+      useEffect(() => {
+        mock();
+      });
+
+      return c("div", {}, [c("span", {}, "Hello")]);
+    };
+
+    const tree = c("div", {}, [c(App, {}, [])]);
+
+    render(tree, root);
+    update();
+    expect(mock).toHaveBeenCalledTimes(2);
+  });
+
+  it("works with deps array", () => {
+    // TODO come up with good use case.
   });
 });
 
