@@ -370,7 +370,6 @@ describe("useEffect", () => {
 
     const Goodbye = () => {
       useEffect(() => {
-        console.log("Goodbye");
         return () => mock();
       }, []);
 
@@ -380,11 +379,8 @@ describe("useEffect", () => {
     const App = () => {
       const [show, setShow] = useState(true);
       useEffect(() => {
-        console.log("App");
         setShow(false);
       }, []);
-
-      console.log({ show });
 
       return c("div", {}, [show ? c(Goodbye, {}, []) : null]);
     };
