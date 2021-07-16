@@ -8,6 +8,10 @@ import {
 
 jest.useFakeTimers();
 
+beforeEach(() => {
+  document.body.innerHTML = "";
+});
+
 describe("createElement", () => {
   it("works for simple HTML", () => {
     const tree = c("button", {}, [c("strong", {}, ["Hello world"])]);
@@ -185,10 +189,6 @@ describe("render", () => {
 });
 
 describe("useState", () => {
-  beforeEach(() => {
-    document.body.innerHTML = "";
-  });
-
   it("doesn't take immediate effect on state value", () => {
     const root = document.createElement("div");
     document.body.appendChild(root);
@@ -309,7 +309,6 @@ describe("useEffect", () => {
 
     const App = () => {
       const [, setData] = useState("");
-      console.log("aaaa");
 
       update = () => setData("123");
 
@@ -333,10 +332,6 @@ describe("useEffect", () => {
 });
 
 describe("DOM", () => {
-  beforeEach(() => {
-    document.body.innerHTML = "";
-  });
-
   it("works with basic elements", () => {
     const root = document.createElement("div");
     document.body.appendChild(root);
