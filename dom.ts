@@ -80,6 +80,20 @@ export const updateDom = (current: RNode, expected: RElement) => {
     }
   });
 
+  // If children was text but is now gone.
+  if (
+    typeof current.props.children === "string" &&
+    typeof expected.props.children !== "string"
+  ) {
+    const clone = current.dom.cloneNode(false);
+
+    if (current.dom.parentNode) {
+      current.dom.parentNode.replaceChild(clone, current.dom);
+      current.dom = clone;
+    }
+  }
+
+  // If children is text and it changed.
   if (
     typeof current.props.children === "string" &&
     typeof expected.props.children === "string"
