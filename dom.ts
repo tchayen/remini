@@ -1,4 +1,4 @@
-import { RElement, RNode } from "./lib";
+import { RElement, RNode, RNodeReal } from "./lib";
 
 const isEvent = (key: string) => !!key.match(new RegExp("on[A-Z].*"));
 const eventToKeyword = (key: string) => key.replace("on", "").toLowerCase();
@@ -92,11 +92,15 @@ export const updateDom = (current: RNode, expected: RElement) => {
   }
 };
 
-export const removeDom = (node: Node) => {
-  node.parentNode?.removeChild(node);
+export const removeDom = (node: RNode) => {
+  if (node.type === null || node.dom === undefined) {
+    throw new Error("Tried to remove incorrect node.");
+  }
+
+  node.dom.parentNode?.removeChild(node.dom);
 };
 
-export const findClosestDom = (node: RNode) => {
+export const findClosestDom = (node: RNode): RNodeReal => {
   let current = node;
 
   while (current.type !== null && !current.dom && current.parent) {
@@ -111,5 +115,5 @@ export const findClosestDom = (node: RNode) => {
     throw new Error("Node is missing DOM.");
   }
 
-  return current.dom;
+  return current;
 };

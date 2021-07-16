@@ -15,16 +15,18 @@ export type RElement =
   | string
   | null;
 
+export type RNodeReal = {
+  type: RenderFunction | string;
+  props: Props;
+  parent: RNode | null;
+  descendants: RNode[];
+  dom?: Node;
+  hooks?: any[];
+  name?: string;
+};
+
 export type RNode =
-  | {
-      type: RenderFunction | string;
-      props: Props;
-      parent: RNode | null;
-      descendants: RNode[];
-      dom?: Node;
-      hooks?: any[];
-      name?: string;
-    }
+  | RNodeReal
   | {
       type: null;
       parent: RNode | null;
@@ -54,6 +56,9 @@ let _currentNode: RNode | null = null;
 let _hookIndex = 0;
 
 const update = (node: RNode, element: RElement) => {
+  let previousNode = _currentNode;
+  let previousIndex = _hookIndex;
+
   if (typeof element === "string") {
     // TODO
     // This is when element is a string.
@@ -98,6 +103,7 @@ const update = (node: RNode, element: RElement) => {
 
     if (current && expected && current.type === expected.type) {
       // UPDATE
+      // console.log("UPDATE");
       if (typeof current.type === "string") {
         updateDom(current, expected);
       }
@@ -106,6 +112,7 @@ const update = (node: RNode, element: RElement) => {
       update(current, expected);
     } else if (current && expected && current.type !== expected.type) {
       // REPLACE
+      // console.log("REPLACE");
       let newNode: RNode = {
         props: expected.props,
         type: expected.type,
@@ -116,9 +123,15 @@ const update = (node: RNode, element: RElement) => {
 
       if (typeof expected.type === "string") {
         if (current.type !== null && current.dom) {
-          removeDom(current.dom);
+          removeDom(current);
         }
-        insertDom(findClosestDom(node), newNode, expected);
+
+        const firstParentWithDom = findClosestDom(node);
+        if (!firstParentWithDom.dom) {
+          throw new Error("Missing DOM");
+        }
+
+        insertDom(firstParentWithDom.dom, newNode, expected);
       }
 
       if (typeof expected.type === "function") {
@@ -129,6 +142,7 @@ const update = (node: RNode, element: RElement) => {
       update(newNode, expected);
     } else if (!current) {
       // ADD
+      // console.log("ADD");
       let newNode: RNode;
       if (expected === null) {
         newNode = {
@@ -148,7 +162,12 @@ const update = (node: RNode, element: RElement) => {
         // TODO: find out why top level node doesn't get props if it is a tag
 
         if (typeof expected.type === "string") {
-          insertDom(findClosestDom(node), newNode, expected);
+          const firstParentWithDom = findClosestDom(node);
+          if (!firstParentWithDom.dom) {
+            throw new Error("Missing DOM");
+          }
+
+          insertDom(firstParentWithDom.dom, newNode, expected);
         }
 
         if (typeof expected.type === "function") {
@@ -160,18 +179,27 @@ const update = (node: RNode, element: RElement) => {
       update(newNode, expected);
     } else if (!expected) {
       // REMOVE
+      // console.log("REMOVE");
       const indexOfCurrent = node.descendants.indexOf(current);
 
       if (current.type === null) {
         return;
       }
 
-      if (typeof current.type === "function") {
-        console.log("useEffect callback on removal");
-      }
+      if (typeof current.type === "function" && current.hooks) {
+        current.hooks.forEach((hook) => {
+          if (hook.cleanup) {
+            hook.cleanup();
+          }
+        });
 
-      if (current.dom) {
-        removeDom(current.dom);
+        const child = current.descendants[0];
+
+        if (child && child.type !== null && child.dom) {
+          removeDom(findClosestDom(child));
+        }
+
+        console.log(current.descendants);
       }
 
       if (expected === null) {
@@ -187,15 +215,21 @@ const update = (node: RNode, element: RElement) => {
       }
     }
   });
+
+  _currentNode = previousNode;
+  _hookIndex = previousIndex;
 };
 
 export const useEffect = (
   callback: () => void | (() => void),
   dependencies?: any[]
 ) => {
+  // Capture the current node.
   let c = _currentNode;
   let i = _hookIndex;
 
+  // This is needed to escape the render loop. Otherwise useEffects would be
+  // called in correct order, but reflected in DOM in reversed one.
   setTimeout(() => {
     if (!c || c.type === null || !c.hooks) {
       throw new Error("Executing useState for non-function element.");
@@ -226,28 +260,34 @@ export const useEffect = (
     }
 
     _hookIndex += 1;
-  }, 1);
+  }, 0);
 };
 
 export const useState = <T>(initial: T): [T, (next: T) => void] => {
-  if (!_currentNode || _currentNode.type === null || !_currentNode.hooks) {
+  // Capture the current node.
+  let c = _currentNode;
+  let i = _hookIndex;
+
+  if (!c || c.type === null || !c.hooks) {
     throw new Error("Executing useState for non-function element.");
   }
 
-  if (_currentNode.hooks[_hookIndex] === undefined) {
-    _currentNode.hooks[_hookIndex] = { state: initial };
+  if (c.hooks[i] === undefined) {
+    c.hooks[i] = { state: initial };
   }
 
-  const hook = _currentNode.hooks[_hookIndex];
+  const hook = c.hooks[i];
 
   const setState = (next: T) => {
-    if (!_currentNode || _currentNode.type === null || !_currentNode.hooks) {
-      throw new Error("Executing useState for non-function element.");
-    }
+    setTimeout(() => {
+      if (!c || c.type === null || !c.hooks) {
+        throw new Error("Executing useState for non-function element.");
+      }
 
-    hook.state = next;
+      hook.state = next;
 
-    update(_currentNode, null);
+      update(c, null);
+    }, 0);
   };
 
   _hookIndex += 1;

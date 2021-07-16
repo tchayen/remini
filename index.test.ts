@@ -139,6 +139,7 @@ describe("render", () => {
     expect(getPrintedNumber()).toBe("0");
 
     update();
+    jest.runAllTimers();
 
     expect(getPrintedNumber()).toBe("1");
   });
@@ -171,19 +172,21 @@ describe("render", () => {
     );
 
     update();
+    jest.runAllTimers();
 
     expect(_rootNode!.descendants[0].descendants[0].descendants[0].type).toBe(
       "span"
     );
 
     update();
+    jest.runAllTimers();
 
     expect(_rootNode!.descendants[0].descendants[0].descendants[0].type).toBe(
       null
     );
   });
 
-  it("works with node removal", () => {
+  xit("works with node removal", () => {
     // TODO
   });
 });
@@ -214,6 +217,7 @@ describe("useState", () => {
     );
 
     update();
+    jest.runAllTimers();
 
     expect(nextValue).toBe(0);
     expect(document.body.innerHTML).toBe(
@@ -250,12 +254,14 @@ describe("useState", () => {
     );
 
     updateA();
+    jest.runAllTimers();
 
     expect(document.body.innerHTML).toBe(
       "<div><div><span>b</span><span>0</span></div></div>"
     );
 
     updateB();
+    jest.runAllTimers();
 
     expect(document.body.innerHTML).toBe(
       "<div><div><span>b</span><span>1</span></div></div>"
@@ -355,6 +361,46 @@ describe("useEffect", () => {
       "<div><div><span>John</span></div></div>"
     );
   });
+
+  it("works with callback", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const mock = jest.fn();
+
+    const Goodbye = () => {
+      useEffect(() => {
+        console.log("Goodbye");
+        return () => mock();
+      }, []);
+
+      return c("span", {}, "Hello");
+    };
+
+    const App = () => {
+      const [show, setShow] = useState(true);
+      useEffect(() => {
+        console.log("App");
+        setShow(false);
+      }, []);
+
+      console.log({ show });
+
+      return c("div", {}, [show ? c(Goodbye, {}, []) : null]);
+    };
+
+    render(c("div", {}, [c(App, {}, [])]), root);
+
+    expect(document.body.innerHTML).toBe(
+      "<div><div><span>Hello</span></div></div>"
+    );
+
+    jest.runAllTimers();
+
+    expect(mock).toHaveBeenCalledTimes(1);
+
+    expect(document.body.innerHTML).toBe("<div><div></div></div>");
+  });
 });
 
 describe("DOM", () => {
@@ -449,6 +495,8 @@ describe("DOM", () => {
     expect(value.innerHTML).toBe("0");
 
     button.click();
+
+    jest.runAllTimers();
 
     expect(value.innerHTML).toBe("1");
   });
