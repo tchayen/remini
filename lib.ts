@@ -193,23 +193,40 @@ export const useEffect = (
   callback: () => void | (() => void),
   dependencies?: any[]
 ) => {
-  if (!_currentNode || _currentNode.type === null || !_currentNode.hooks) {
-    throw new Error("Executing useState for non-function element.");
-  }
+  let c = _currentNode;
+  let i = _hookIndex;
 
-  if (_currentNode.hooks[_hookIndex] === undefined || !dependencies) {
-    const cleanup = callback();
-    _currentNode.hooks[_hookIndex] = { cleanup, dependencies };
-  } else if (dependencies) {
-    for (let i = 0; i < dependencies.length; i++) {
-      if (dependencies[i] !== _currentNode.hooks[_hookIndex].dependencies[i]) {
-        const cleanup = callback();
-        _currentNode.hooks[_hookIndex].cleanup = { cleanup, dependencies };
-      }
+  setTimeout(() => {
+    if (!c || c.type === null || !c.hooks) {
+      throw new Error("Executing useState for non-function element.");
     }
-  }
 
-  _hookIndex += 1;
+    if (c.hooks[i] === undefined) {
+      // INITIALIZE
+      c.hooks[i] = { dependencies };
+      const cleanup = callback();
+      c.hooks[i].cleanup = cleanup;
+    } else if (dependencies) {
+      // COMPARE DEPENDENCIES
+      let shouldRun = false;
+      for (let j = 0; j < dependencies.length; j++) {
+        if (dependencies[j] !== c.hooks[i].dependencies[j]) {
+          shouldRun = true;
+        }
+      }
+
+      if (shouldRun) {
+        const cleanup = callback();
+        c.hooks[i].cleanup = { cleanup, dependencies };
+      }
+    } else if (!dependencies) {
+      // RUN ALWAYS
+      const cleanup = callback();
+      c.hooks[i] = { cleanup, dependencies };
+    }
+
+    _hookIndex += 1;
+  }, 1);
 };
 
 export const useState = <T>(initial: T): [T, (next: T) => void] => {
@@ -229,6 +246,7 @@ export const useState = <T>(initial: T): [T, (next: T) => void] => {
     }
 
     hook.state = next;
+
     update(_currentNode, null);
   };
 

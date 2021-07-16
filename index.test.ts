@@ -323,11 +323,37 @@ describe("useEffect", () => {
 
     render(tree, root);
     update();
+    jest.runAllTimers();
     expect(mock).toHaveBeenCalledTimes(2);
   });
 
   it("works with deps array", () => {
-    // TODO come up with good use case.
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const Profile = ({ username }: { username: string }) => {
+      const [user, setUser] = useState<{ username: string } | null>(null);
+
+      useEffect(() => {
+        setUser({ username });
+      }, [username]);
+
+      return c("div", {}, [c("span", {}, user ? user.username : "Anonymous")]);
+    };
+
+    const tree = c("div", {}, [c(Profile, { username: "John" }, [])]);
+
+    render(tree, root);
+
+    expect(document.body.innerHTML).toBe(
+      "<div><div><span>Anonymous</span></div></div>"
+    );
+
+    jest.runAllTimers();
+
+    expect(document.body.innerHTML).toBe(
+      "<div><div><span>John</span></div></div>"
+    );
   });
 });
 
