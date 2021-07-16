@@ -138,6 +138,26 @@ const update = (node: RNode, element: RElement) => {
         newNode.hooks = [];
       }
 
+      if (
+        typeof current.type === "function" &&
+        current.type !== null &&
+        current.hooks
+      ) {
+        current.hooks.forEach((hook) => {
+          if (hook.cleanup) {
+            hook.cleanup();
+          }
+        });
+
+        const child = current.descendants[0];
+
+        if (child && child.type !== null && child.dom) {
+          removeDom(findClosestDom(child));
+        }
+
+        console.log(current.descendants);
+      }
+
       node.descendants[node.descendants.indexOf(current)] = newNode;
       update(newNode, expected);
     } else if (!current) {
@@ -198,8 +218,6 @@ const update = (node: RNode, element: RElement) => {
         if (child && child.type !== null && child.dom) {
           removeDom(findClosestDom(child));
         }
-
-        console.log(current.descendants);
       }
 
       if (expected === null) {
