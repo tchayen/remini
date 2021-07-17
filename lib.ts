@@ -33,16 +33,43 @@ export type RNode =
       descendants: RNode[];
     };
 
-export const createElement = (
+export function createElement(
+  component: RenderFunction | string,
+  props: any,
+  children: RElement[]
+): RElement;
+
+export function createElement(
   component: RenderFunction | string,
   props?: any,
-  children?: RElement[] | string
-): RElement => {
+  ...children: RElement[]
+): RElement;
+
+export function createElement(
+  component: RenderFunction | string,
+  props?: any,
+  children?: string
+): RElement;
+
+export function createElement(
+  component: RenderFunction | string,
+  props: any,
+  ...children: any
+): RElement {
+  let normalizedChildren;
+  if (children.length === 1 && typeof children[0] === "string") {
+    normalizedChildren = children[0];
+  } else if (children.length === 0) {
+    normalizedChildren = null;
+  } else {
+    normalizedChildren = children.flat();
+  }
+
   return {
     type: component,
-    props: { ...(props || {}), children: children || [] },
+    props: { ...(props || {}), children: normalizedChildren },
   };
-};
+}
 
 const getName = (type: RenderFunction | string) => {
   if (typeof type === "string") {

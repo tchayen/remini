@@ -48,17 +48,23 @@ const Modal = ({ username }: { username: string }) => {
   } else if (error) {
     result = c("span", {}, `Error: ${error.message}`);
   } else if (user) {
-    result = c("div", { class: "text-sm" }, [
+    result = c(
+      "div",
+      { class: "text-sm" },
       c("div", { class: "italic" }, user.id),
-      c("div", { class: "flex flex-row" }, [
+      c(
+        "div",
+        { class: "flex flex-row" },
         c("div", { class: "mr-1" }, "Karma:"),
-        c("div", { class: "font-bold" }, `${user.karma}`),
-      ]),
-      c("div", { class: "flex flex-row" }, [
+        c("div", { class: "font-bold" }, `${user.karma}`)
+      ),
+      c(
+        "div",
+        { class: "flex flex-row" },
         c("div", { class: "mr-1" }, "Since:"),
-        c("div", {}, `${new Date(user.created * 1000).toLocaleDateString()}`),
-      ]),
-    ]);
+        c("div", {}, `${new Date(user.created * 1000).toLocaleDateString()}`)
+      )
+    );
   }
 
   return c(
@@ -67,7 +73,7 @@ const Modal = ({ username }: { username: string }) => {
       class: "bg-white p-2 shadow-xl rounded",
       style: "position: absolute",
     },
-    [result]
+    result
   );
 };
 
@@ -82,10 +88,12 @@ const Author = ({ username }: { username: string }) => {
     setShow(false);
   };
 
-  return c("div", { class: "mr-3", style: "position: relative" }, [
+  return c(
+    "div",
+    { class: "mr-3", style: "position: relative" },
     show ? c(Modal, { username }) : null,
-    c("div", { class: "text-sm font-bold", onMouseOver, onMouseOut }, username),
-  ]);
+    c("div", { class: "text-sm font-bold", onMouseOver, onMouseOut }, username)
+  );
 };
 
 const HackerNews = () => {
@@ -128,29 +136,35 @@ const HackerNews = () => {
     "div",
     { class: "p-12" },
     items.map((item) =>
-      c("div", { class: "bg-green-100 p-3 rounded mb-4 flex flex-col" }, [
-        c("div", { class: "flex flex-row" }, [
+      c(
+        "div",
+        { class: "bg-green-100 p-3 rounded mb-4 flex flex-col" },
+        c(
+          "div",
+          { class: "flex flex-row" },
           c(Author, { username: item.by }),
           c(
             "div",
             { class: "text-sm" },
             new Date(item.time * 1000).toLocaleString()
-          ),
-        ]),
+          )
+        ),
         c("div", {}, item.title),
-        c("div", { class: "text-sm text-green-700 flex flex-row" }, [
+        c(
+          "div",
+          { class: "text-sm text-green-700 flex flex-row" },
           c("a", { href: item.url, class: "mr-2" }, "LINK"),
           c(
             "a",
             { href: `https://news.ycombinator.com/item?id=${item.id}` },
             "POST"
-          ),
-        ]),
-      ])
+          )
+        )
+      )
     )
   );
 };
 
-const tree = c("div", {}, [c(HackerNews)]);
+const tree = c("div", {}, c(HackerNews));
 
 render(tree, root!);

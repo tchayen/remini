@@ -14,7 +14,7 @@ beforeEach(() => {
 
 describe("createElement", () => {
   it("works for simple HTML", () => {
-    const tree = c("button", {}, [c("strong", {}, ["Hello world"])]);
+    const tree = c("button", {}, c("strong", {}, "Hello world"));
 
     const expected = {
       type: "button",
@@ -23,7 +23,7 @@ describe("createElement", () => {
           {
             type: "strong",
             props: {
-              children: ["Hello world"],
+              children: "Hello world",
             },
           },
         ],
@@ -34,13 +34,13 @@ describe("createElement", () => {
   });
 
   it("works with props", () => {
-    const tree = c("a", { href: "https://google.com" }, ["Google"]);
+    const tree = c("a", { href: "https://google.com" }, "Google");
 
     const expected = {
       type: "a",
       props: {
         href: "https://google.com",
-        children: ["Google"],
+        children: "Google",
       },
     };
 
@@ -49,12 +49,47 @@ describe("createElement", () => {
 
   it("works with components", () => {
     const Title = ({ children }: { children: string }) => {
-      return c("h1", {}, [children]);
+      return c("h1", {}, children);
+    };
+
+    const tree = c(
+      "div",
+      {},
+      c(Title, {}, "Hello world"),
+      c("span", {}, "Text")
+    );
+
+    const expected = {
+      type: "div",
+      props: {
+        children: [
+          {
+            type: Title,
+            props: {
+              children: "Hello world",
+            },
+          },
+          {
+            type: "span",
+            props: {
+              children: "Text",
+            },
+          },
+        ],
+      },
+    };
+
+    expect(tree).toStrictEqual(expected);
+  });
+
+  it("works with array of children", () => {
+    const Title = ({ children }: { children: string }) => {
+      return c("h1", {}, children);
     };
 
     const tree = c("div", {}, [
-      c(Title, {}, ["Hello world"]),
-      c("span", {}, ["Text"]),
+      c(Title, {}, "Hello world"),
+      c("span", {}, "Text"),
     ]);
 
     const expected = {
@@ -64,13 +99,13 @@ describe("createElement", () => {
           {
             type: Title,
             props: {
-              children: ["Hello world"],
+              children: "Hello world",
             },
           },
           {
             type: "span",
             props: {
-              children: ["Text"],
+              children: "Text",
             },
           },
         ],
@@ -87,16 +122,15 @@ describe("render", () => {
     document.body.appendChild(root);
 
     const Counter = ({ children }: { children: string }) => {
-      return c("div", {}, [
+      return c(
+        "div",
+        {},
         c("span", {}, children),
-        c("span", { style: "color: #ff0000" }, "0"),
-      ]);
+        c("span", { style: "color: #ff0000" }, "0")
+      );
     };
 
-    const tree = c("div", {}, [
-      c(Counter, {}, "Counter: "),
-      c("h1", {}, "Test"),
-    ]);
+    const tree = c("div", {}, c(Counter, {}, "Counter: "), c("h1", {}, "Test"));
 
     render(tree, root);
 
@@ -123,16 +157,15 @@ describe("render", () => {
 
       update = () => setValue(value + 1);
 
-      return c("div", {}, [
+      return c(
+        "div",
+        {},
         c("span", {}, children),
-        c("span", { style: "color: #ff0000" }, `${value}`),
-      ]);
+        c("span", { style: "color: #ff0000" }, `${value}`)
+      );
     };
 
-    const tree = c("div", {}, [
-      c(Counter, {}, "Counter: "),
-      c("h1", {}, "Test"),
-    ]);
+    const tree = c("div", {}, c(Counter, {}, "Counter: "), c("h1", {}, "Test"));
 
     render(tree, root);
 
@@ -156,13 +189,15 @@ describe("render", () => {
         setShow(!show);
       };
 
-      return c("div", {}, [
+      return c(
+        "div",
+        {},
         show ? c("span", {}, "Show") : null,
-        c("div", {}, "This is always here"),
-      ]);
+        c("div", {}, "This is always here")
+      );
     };
 
-    const tree = c("div", {}, [c(Alter)]);
+    const tree = c("div", {}, c(Alter));
 
     render(tree, root);
 
@@ -204,10 +239,10 @@ describe("useState", () => {
         nextValue = value;
       };
 
-      return c("div", {}, [c("span", {}, `${value}`)]);
+      return c("div", {}, c("span", {}, `${value}`));
     };
 
-    render(c("div", {}, [c(App)]), root);
+    render(c("div", {}, c(App)), root);
 
     expect(document.body.innerHTML).toBe(
       "<div><div><span>0</span></div></div>"
@@ -240,10 +275,10 @@ describe("useState", () => {
         setB(1);
       };
 
-      return c("div", {}, [c("span", {}, a), c("span", {}, b.toString())]);
+      return c("div", {}, c("span", {}, a), c("span", {}, b.toString()));
     };
 
-    render(c("div", {}, [c(App)]), root);
+    render(c("div", {}, c(App)), root);
 
     expect(document.body.innerHTML).toBe(
       "<div><div><span>a</span><span>0</span></div></div>"
@@ -280,10 +315,10 @@ describe("useEffect", () => {
         mock();
       }, []);
 
-      return c("div", {}, [c("span", {}, "Hello")]);
+      return c("div", {}, c("span", {}, "Hello"));
     };
 
-    const tree = c("div", {}, [c(App)]);
+    const tree = c("div", {}, c(App));
 
     render(tree, root);
 
@@ -308,10 +343,10 @@ describe("useEffect", () => {
         mock();
       });
 
-      return c("div", {}, [c("span", {}, "Hello")]);
+      return c("div", {}, c("span", {}, "Hello"));
     };
 
-    const tree = c("div", {}, [c(App)]);
+    const tree = c("div", {}, c(App));
 
     render(tree, root);
 
@@ -331,10 +366,10 @@ describe("useEffect", () => {
         setUser({ username });
       }, [username]);
 
-      return c("div", {}, [c("span", {}, user ? user.username : "Anonymous")]);
+      return c("div", {}, c("span", {}, user ? user.username : "Anonymous"));
     };
 
-    const tree = c("div", {}, [c(Profile, { username: "John" })]);
+    const tree = c("div", {}, c(Profile, { username: "John" }));
 
     render(tree, root);
 
@@ -363,10 +398,10 @@ describe("useEffect", () => {
         setShow(false);
       }, []);
 
-      return c("div", {}, [show ? c(Goodbye) : null]);
+      return c("div", {}, show ? c(Goodbye) : null);
     };
 
-    render(c("div", {}, [c(App)]), root);
+    render(c("div", {}, c(App)), root);
 
     expect(mock).toHaveBeenCalledTimes(1);
     expect(document.body.innerHTML).toBe("<div><div></div></div>");
@@ -378,9 +413,11 @@ describe("DOM", () => {
     const root = document.createElement("div");
     document.body.appendChild(root);
 
-    const tree = c("div", { id: "root" }, [
-      c("a", { href: "https://google.com" }, "Google"),
-    ]);
+    const tree = c(
+      "div",
+      { id: "root" },
+      c("a", { href: "https://google.com" }, "Google")
+    );
 
     render(tree, root);
 
@@ -397,10 +434,12 @@ describe("DOM", () => {
       return c("h1", {}, children);
     };
 
-    const tree = c("div", {}, [
+    const tree = c(
+      "div",
+      {},
       c(Title, {}, "Hello world"),
-      c("span", {}, "Text"),
-    ]);
+      c("span", {}, "Text")
+    );
 
     render(tree, root);
 
@@ -416,10 +455,10 @@ describe("DOM", () => {
     const onClick = jest.fn();
 
     const Click = () => {
-      return c("div", {}, [c("button", { id: "button", onClick }, "Click")]);
+      return c("div", {}, c("button", { id: "button", onClick }, "Click"));
     };
 
-    const tree = c("div", {}, [c(Click)]);
+    const tree = c("div", {}, c(Click));
 
     render(tree, root);
 
@@ -445,13 +484,15 @@ describe("DOM", () => {
         setValue(value + 1);
       };
 
-      return c("div", {}, [
+      return c(
+        "div",
+        {},
         c("span", { id: "value" }, `${value}`),
-        c("button", { id: "button", onClick }, "Click"),
-      ]);
+        c("button", { id: "button", onClick }, "Click")
+      );
     };
 
-    const tree = c("div", {}, [c(Counter)]);
+    const tree = c("div", {}, c(Counter));
 
     render(tree, root);
 
