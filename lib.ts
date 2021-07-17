@@ -291,17 +291,13 @@ export const useState = <T>(initial: T): [T, (next: T) => void] => {
   const hook = c.hooks[i];
 
   const setState = (next: T) => {
-    // This is needed to escape the render loop. Otherwise useEffects would be
-    // called in correct order, but reflected in DOM in reversed one.
-    setTimeout(() => {
-      if (!c || c.type === null || !c.hooks) {
-        throw new Error("Executing useState for non-function element.");
-      }
+    if (!c || c.type === null || !c.hooks) {
+      throw new Error("Executing useState for non-function element.");
+    }
 
-      hook.state = next;
+    hook.state = next;
 
-      update(c, null);
-    }, 0);
+    runUpdateLoop(c, null);
   };
 
   _hookIndex += 1;
@@ -322,5 +318,25 @@ export const render = (element: RElement, container: HTMLElement) => {
     descendants: [],
   };
 
-  update(_rootNode, element);
+  runUpdateLoop(_rootNode, element);
+};
+
+type Job = { node: RNode; element: RElement };
+let updating = false;
+let tasks: Job[] = [];
+const runUpdateLoop = (node: RNode, element: RElement) => {
+  tasks.push({ node, element });
+
+  if (updating) {
+    return;
+  }
+
+  updating = true;
+
+  let current: Job | undefined;
+  while ((current = tasks.shift())) {
+    update(current.node, current.element);
+  }
+
+  updating = false;
 };
