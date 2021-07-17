@@ -2,6 +2,26 @@
 
 Mini React implementation made for fun and practice. Please do not use in production.
 
+## Example
+
+```js
+import { useState, createElement as c, render } from "./lib";
+
+const Counter = () => {
+  const [count, setCount] = useState(0);
+
+  return c(
+    "div",
+    {},
+    c("div", {}, `Value: ${count}`),
+    c("button", { onClick: () => setCount(count + 1) })
+  );
+};
+
+render(c("div", {}, c(Counter)), document.getElementById("root"));
+```
+
+
 ## Might come later
 - `ref`s
 - Accepting `style` object as alternative to string prop
