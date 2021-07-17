@@ -83,7 +83,7 @@ const Author = ({ username }: { username: string }) => {
   };
 
   return c("div", { class: "mr-3", style: "position: relative" }, [
-    show ? c(Modal, { username }, []) : null,
+    show ? c(Modal, { username }) : null,
     c("div", { class: "text-sm font-bold", onMouseOver, onMouseOut }, username),
   ]);
 };
@@ -130,7 +130,7 @@ const HackerNews = () => {
     items.map((item) =>
       c("div", { class: "bg-green-100 p-3 rounded mb-4 flex flex-col" }, [
         c("div", { class: "flex flex-row" }, [
-          c(Author, { username: item.by }, []),
+          c(Author, { username: item.by }),
           c(
             "div",
             { class: "text-sm" },
@@ -151,6 +151,6 @@ const HackerNews = () => {
   );
 };
 
-const tree = c("div", {}, [c(HackerNews, {}, [])]);
+const tree = c("div", {}, [c(HackerNews)]);
 
 render(tree, root!);

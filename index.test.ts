@@ -162,7 +162,7 @@ describe("render", () => {
       ]);
     };
 
-    const tree = c("div", {}, [c(Alter, {}, [])]);
+    const tree = c("div", {}, [c(Alter)]);
 
     render(tree, root);
 
@@ -207,7 +207,7 @@ describe("useState", () => {
       return c("div", {}, [c("span", {}, `${value}`)]);
     };
 
-    render(c("div", {}, [c(App, {}, [])]), root);
+    render(c("div", {}, [c(App)]), root);
 
     expect(document.body.innerHTML).toBe(
       "<div><div><span>0</span></div></div>"
@@ -243,7 +243,7 @@ describe("useState", () => {
       return c("div", {}, [c("span", {}, a), c("span", {}, b.toString())]);
     };
 
-    render(c("div", {}, [c(App, {}, [])]), root);
+    render(c("div", {}, [c(App)]), root);
 
     expect(document.body.innerHTML).toBe(
       "<div><div><span>a</span><span>0</span></div></div>"
@@ -283,7 +283,7 @@ describe("useEffect", () => {
       return c("div", {}, [c("span", {}, "Hello")]);
     };
 
-    const tree = c("div", {}, [c(App, {}, [])]);
+    const tree = c("div", {}, [c(App)]);
 
     render(tree, root);
 
@@ -311,7 +311,7 @@ describe("useEffect", () => {
       return c("div", {}, [c("span", {}, "Hello")]);
     };
 
-    const tree = c("div", {}, [c(App, {}, [])]);
+    const tree = c("div", {}, [c(App)]);
 
     render(tree, root);
 
@@ -334,7 +334,7 @@ describe("useEffect", () => {
       return c("div", {}, [c("span", {}, user ? user.username : "Anonymous")]);
     };
 
-    const tree = c("div", {}, [c(Profile, { username: "John" }, [])]);
+    const tree = c("div", {}, [c(Profile, { username: "John" })]);
 
     render(tree, root);
 
@@ -363,10 +363,10 @@ describe("useEffect", () => {
         setShow(false);
       }, []);
 
-      return c("div", {}, [show ? c(Goodbye, {}, []) : null]);
+      return c("div", {}, [show ? c(Goodbye) : null]);
     };
 
-    render(c("div", {}, [c(App, {}, [])]), root);
+    render(c("div", {}, [c(App)]), root);
 
     expect(mock).toHaveBeenCalledTimes(1);
     expect(document.body.innerHTML).toBe("<div><div></div></div>");
@@ -419,7 +419,7 @@ describe("DOM", () => {
       return c("div", {}, [c("button", { id: "button", onClick }, "Click")]);
     };
 
-    const tree = c("div", {}, [c(Click, {}, [])]);
+    const tree = c("div", {}, [c(Click)]);
 
     render(tree, root);
 
@@ -451,7 +451,7 @@ describe("DOM", () => {
       ]);
     };
 
-    const tree = c("div", {}, [c(Counter, {}, [])]);
+    const tree = c("div", {}, [c(Counter)]);
 
     render(tree, root);
 

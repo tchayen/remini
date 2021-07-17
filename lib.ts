@@ -35,12 +35,12 @@ export type RNode =
 
 export const createElement = (
   component: RenderFunction | string,
-  props: any,
-  children: RElement[] | string
+  props?: any,
+  children?: RElement[] | string
 ): RElement => {
   return {
     type: component,
-    props: { ...props, children },
+    props: { ...(props || {}), children: children || [] },
   };
 };
 
