@@ -1,60 +1,34 @@
 # remini
 
-Mini React implementation.
+Mini React implementation made for fun and practice. Please do not use in production.
 
-## Bugs
-- Top level node doesn't receive props if it's a tag
-- Top level component can't be component
-
-## TODO
-- nicer API more like [`hyperscript`](https://github.com/hyperhype/hyperscript)
-- user inputs (seems to be working?)
-- `style` object
+## Might come later
 - `ref`s
-- context
-- fragments
-- `useMemo`?
+- Accepting `style` object as alternative to string prop
+- Context API
+- `<Fragment />`
 
-```ts
-export function createElement(
-  component: RenderFunction | string,
-  props: any,
-  ...children: RElement[]
-): RElement;
+## Known bugs
+- Top level node must be an HTML tag.
+- Top level node won't receive props.
 
-export function createElement(
-  component: RenderFunction | string,
-  props: any,
-  children: string
-): RElement;
+## Useful reading
 
-export function createElement(
-  component: RenderFunction | string,
-  props: any,
-  children: any
-): RElement {
-  return {
-    type: component,
-    props: { ...props, children },
-  };
-}
-```
+[Blogged Answers: A (Mostly) Complete Guide to React Rendering Behavior](https://blog.isquaredsoftware.com/2020/05/blogged-answers-a-mostly-complete-guide-to-react-rendering-behavior/)
 
-https://pomb.us/build-your-own-react/
+[React as a UI Runtime
+](https://overreacted.io/react-as-a-ui-runtime/)
 
-https://indepth.dev/posts/1007/the-how-and-why-on-reacts-usage-of-linked-list-in-fiber-to-walk-the-components-tree
+[How Does setState Know What to Do?
+](https://overreacted.io/how-does-setstate-know-what-to-do/)
 
-https://indepth.dev/posts/1008/inside-fiber-in-depth-overview-of-the-new-reconciliation-algorithm-in-react
+[The how and why on React’s usage of linked list in Fiber to walk the component’s tree](https://indepth.dev/posts/1007/the-how-and-why-on-reacts-usage-of-linked-list-in-fiber-to-walk-the-components-tree)
 
-https://indepth.dev/posts/1009/in-depth-explanation-of-state-and-props-update-in-react
+[Inside Fiber: in-depth overview of the new reconciliation algorithm in React](https://indepth.dev/posts/1008/inside-fiber-in-depth-overview-of-the-new-reconciliation-algorithm-in-react)
 
-https://overreacted.io/react-as-a-ui-runtime/
+[In-depth explanation of state and props update in React
+](https://indepth.dev/posts/1009/in-depth-explanation-of-state-and-props-update-in-react)
 
-https://medium.com/react-in-depth/the-how-and-why-on-reacts-usage-of-linked-list-in-fiber-67f1014d0eb7
+[Build your own React](https://pomb.us/build-your-own-react/)
 
-https://overreacted.io/how-does-setstate-know-what-to-do/
-
-http://danlec.com/blog/xss-via-a-spoofed-react-element
-
-https://blog.isquaredsoftware.com/2020/05/blogged-answers-a-mostly-complete-guide-to-react-rendering-behavior/#component-metadata-and-fibers
-
+[XSS via a spoofed React element](http://danlec.com/blog/xss-via-a-spoofed-react-element)
