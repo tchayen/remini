@@ -42,13 +42,12 @@ const Modal = ({ username }: { username: string }) => {
       });
   }, [username]);
 
-  let result: RElement = null;
   if (loading) {
-    result = c("div", { class: "text-sm text-gray-400" }, "Loading...");
+    return c("div", { class: "text-sm text-gray-400" }, "Loading...");
   } else if (error) {
-    result = c("span", {}, `Error: ${error.message}`);
+    return c("span", {}, `Error: ${error.message}`);
   } else if (user) {
-    result = c(
+    return c(
       "div",
       { class: "text-sm" },
       c("div", { class: "italic" }, user.id),
@@ -65,16 +64,9 @@ const Modal = ({ username }: { username: string }) => {
         c("div", {}, `${new Date(user.created * 1000).toLocaleDateString()}`)
       )
     );
+  } else {
+    return null;
   }
-
-  return c(
-    "div",
-    {
-      class: "bg-white p-2 shadow-xl rounded",
-      style: "position: absolute",
-    },
-    result
-  );
 };
 
 const Author = ({ username }: { username: string }) => {
@@ -90,8 +82,17 @@ const Author = ({ username }: { username: string }) => {
 
   return c(
     "div",
-    { class: "mr-3", style: "position: relative" },
-    show ? c(Modal, { username }) : null,
+    { class: "mr-2", style: "position: relative" },
+    show
+      ? c(
+          "div",
+          {
+            class: "bg-white p-2 shadow-xl rounded",
+            style: "position: absolute",
+          },
+          c(Modal, { username })
+        )
+      : null,
     c("div", { class: "text-sm font-bold", onMouseOver, onMouseOut }, username)
   );
 };
@@ -125,7 +126,11 @@ const HackerNews = () => {
   }, []);
 
   if (loading) {
-    return c("div", { class: "p-10 text-3xl" }, "Loading...");
+    return c(
+      "div",
+      { class: "p-10 text-xl text-gray-400 italic" },
+      "Loading..."
+    );
   }
 
   if (error) {
