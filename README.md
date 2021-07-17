@@ -21,6 +21,11 @@ const Counter = () => {
 render(c("div", {}, c(Counter)), document.getElementById("root"));
 ```
 
+## How to play with it?
+
+`yarn start` to start the dev server at `localhost:1234`.
+
+`yarn test` to see the tests passing.
 
 ## Might come later
 - `ref`s
