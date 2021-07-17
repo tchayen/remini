@@ -27,9 +27,11 @@ const root = document.getElementById("root");
 
 type HNData = number[];
 type HNItem = {
+  id: number;
   by: string;
   time: number;
   title: string;
+  url: string;
 };
 
 const HackerNews = () => {
@@ -70,14 +72,22 @@ const HackerNews = () => {
 
   return c(
     "div",
-    { class: "p-4" },
+    { class: "p-12" },
     items.map((item) =>
-      c("div", { class: "bg-green-100 p-2 rounded mb-4" }, [
+      c("div", { class: "bg-green-100 p-3 rounded mb-4 flex flex-col" }, [
         c("div", { class: "flex flex-row" }, [
-          c("div", { class: "text-sm mr-2 font-bold" }, item.by),
+          c("div", { class: "text-sm mr-3 font-bold" }, item.by),
           c("div", { class: "text-sm" }, new Date(item.time).toLocaleString()),
         ]),
         c("div", {}, item.title),
+        c("div", { class: "text-sm text-green-700 flex flex-row" }, [
+          c("a", { href: item.url, class: "mr-2" }, "LINK"),
+          c(
+            "a",
+            { href: `https://news.ycombinator.com/item?id=${item.id}` },
+            "POST"
+          ),
+        ]),
       ])
     )
   );
