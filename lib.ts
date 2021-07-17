@@ -154,8 +154,6 @@ const update = (node: RNode, element: RElement) => {
         if (child && child.type !== null && child.dom) {
           removeDom(findClosestDom(child));
         }
-
-        console.log(current.descendants);
       }
 
       node.descendants[node.descendants.indexOf(current)] = newNode;
@@ -206,6 +204,10 @@ const update = (node: RNode, element: RElement) => {
         return;
       }
 
+      if (typeof current.type === "string" && current.dom) {
+        removeDom(current);
+      }
+
       if (typeof current.type === "function" && current.hooks) {
         current.hooks.forEach((hook) => {
           if (hook.cleanup) {
@@ -242,43 +244,35 @@ export const useEffect = (
   callback: () => void | (() => void),
   dependencies?: any[]
 ) => {
-  // Capture the current node.
-  let c = _currentNode;
-  let i = _hookIndex;
+  if (!_currentNode || _currentNode.type === null || !_currentNode.hooks) {
+    throw new Error("Executing useState for non-function element.");
+  }
 
-  // This is needed to escape the render loop. Otherwise useEffects would be
-  // called in correct order, but reflected in DOM in reversed one.
-  setTimeout(() => {
-    if (!c || c.type === null || !c.hooks) {
-      throw new Error("Executing useState for non-function element.");
+  if (_currentNode.hooks[_hookIndex] === undefined) {
+    // INITIALIZE
+    _currentNode.hooks[_hookIndex] = { dependencies };
+    const cleanup = callback();
+    _currentNode.hooks[_hookIndex].cleanup = cleanup;
+  } else if (dependencies) {
+    // COMPARE DEPENDENCIES
+    let shouldRun = false;
+    for (let j = 0; j < dependencies.length; j++) {
+      if (dependencies[j] !== _currentNode.hooks[_hookIndex].dependencies[j]) {
+        shouldRun = true;
+      }
     }
 
-    if (c.hooks[i] === undefined) {
-      // INITIALIZE
-      c.hooks[i] = { dependencies };
+    if (shouldRun) {
       const cleanup = callback();
-      c.hooks[i].cleanup = cleanup;
-    } else if (dependencies) {
-      // COMPARE DEPENDENCIES
-      let shouldRun = false;
-      for (let j = 0; j < dependencies.length; j++) {
-        if (dependencies[j] !== c.hooks[i].dependencies[j]) {
-          shouldRun = true;
-        }
-      }
-
-      if (shouldRun) {
-        const cleanup = callback();
-        c.hooks[i].cleanup = { cleanup, dependencies };
-      }
-    } else if (!dependencies) {
-      // RUN ALWAYS
-      const cleanup = callback();
-      c.hooks[i] = { cleanup, dependencies };
+      _currentNode.hooks[_hookIndex].cleanup = { cleanup, dependencies };
     }
+  } else if (!dependencies) {
+    // RUN ALWAYS
+    const cleanup = callback();
+    _currentNode.hooks[_hookIndex] = { cleanup, dependencies };
+  }
 
-    _hookIndex += 1;
-  }, 0);
+  _hookIndex += 1;
 };
 
 export const useState = <T>(initial: T): [T, (next: T) => void] => {
@@ -297,6 +291,8 @@ export const useState = <T>(initial: T): [T, (next: T) => void] => {
   const hook = c.hooks[i];
 
   const setState = (next: T) => {
+    // This is needed to escape the render loop. Otherwise useEffects would be
+    // called in correct order, but reflected in DOM in reversed one.
     setTimeout(() => {
       if (!c || c.type === null || !c.hooks) {
         throw new Error("Executing useState for non-function element.");

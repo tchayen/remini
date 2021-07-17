@@ -1,37 +1,93 @@
-import { createElement as c, render, useEffect, useState } from "./lib";
+import {
+  createElement as c,
+  RElement,
+  render,
+  useEffect,
+  useState,
+} from "./lib";
 
 const root = document.getElementById("root");
 
-// const Counter = () => {
-//   const [value, setValue] = useState(0);
-
-//   const onClick = () => {
-//     setValue(value + 1);
-//   };
-
-//   return c("div", { class: "p-10 bg-green-100 h-screen" }, [
-//     c("div", { class: "mb-4 text-2xl" }, `${value}`),
-//     c(
-//       "button",
-//       {
-//         onClick,
-//         class:
-//           "bg-green-500 hover:bg-green-600 py-2 px-4 rounded-xl text-white font-medium",
-//       },
-//       "Counter++"
-//     ),
-//   ]);
-// };
-
-// const tree = c("div", {}, [c(Counter, {}, [])]);
-
 type HNData = number[];
+
 type HNItem = {
   id: number;
   by: string;
   time: number;
   title: string;
   url: string;
+};
+
+type HNUser = {
+  id: string;
+  karma: number;
+  created: number;
+};
+
+const Modal = ({ username }: { username: string }) => {
+  const [user, setUser] = useState<HNUser | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<{ message: string } | null>(null);
+
+  useEffect(() => {
+    fetch(`https://hacker-news.firebaseio.com/v0/user/${username}.json`)
+      .then((response) => response.json())
+      .then((data) => {
+        setUser(data);
+        setLoading(false);
+      })
+      .catch((error) => {
+        setError(error);
+        setLoading(false);
+      });
+  }, [username]);
+
+  console.log(user);
+
+  let result: RElement = null;
+  if (loading) {
+    result = c("div", { class: "text-sm text-gray-400" }, "Loading...");
+  } else if (error) {
+    result = c("span", {}, `Error: ${error.message}`);
+  } else if (user) {
+    result = c("div", { class: "text-sm" }, [
+      c("div", { class: "italic" }, user.id),
+      c("div", { class: "flex flex-row" }, [
+        c("div", { class: "mr-1" }, "Karma:"),
+        c("div", { class: "font-bold" }, `${user.karma}`),
+      ]),
+      c("div", { class: "flex flex-row" }, [
+        c("div", { class: "mr-1" }, "Since:"),
+        c("div", {}, `${new Date(user.created * 1000).toLocaleDateString()}`),
+      ]),
+    ]);
+  }
+
+  return c(
+    "div",
+    {
+      class: "bg-white p-2 shadow-xl rounded",
+      style: "position: absolute",
+    },
+    [result]
+  );
+};
+
+const Author = ({ username }: { username: string }) => {
+  const [show, setShow] = useState(false);
+
+  const onMouseOver = () => {
+    setShow(true);
+  };
+
+  const onMouseOut = () => {
+    setShow(false);
+  };
+
+  return c("div", { class: "mr-3", style: "position: relative" }, [
+    show ? c(Modal, { username }, []) : null,
+    c("div", { class: "text-sm font-bold", onMouseOver, onMouseOut }, username),
+  ]);
 };
 
 const HackerNews = () => {
@@ -76,8 +132,12 @@ const HackerNews = () => {
     items.map((item) =>
       c("div", { class: "bg-green-100 p-3 rounded mb-4 flex flex-col" }, [
         c("div", { class: "flex flex-row" }, [
-          c("div", { class: "text-sm mr-3 font-bold" }, item.by),
-          c("div", { class: "text-sm" }, new Date(item.time).toLocaleString()),
+          c(Author, { username: item.by }, []),
+          c(
+            "div",
+            { class: "text-sm" },
+            new Date(item.time * 1000).toLocaleString()
+          ),
         ]),
         c("div", {}, item.title),
         c("div", { class: "text-sm text-green-700 flex flex-row" }, [

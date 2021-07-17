@@ -496,4 +496,12 @@ describe("DOM", () => {
 
     expect(value.innerHTML).toBe("1");
   });
+
+  it("has text nodes updated", () => {
+    // TODO
+  });
+
+  it("has text nodes removed", () => {
+    // TODO
+  });
 });
