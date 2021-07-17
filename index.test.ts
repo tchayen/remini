@@ -265,14 +265,7 @@ describe("useState", () => {
 
 describe("useEffect", () => {
   it("works with empty deps array", () => {
-    const getDelayedResponse = (): Promise<string> => {
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          resolve("response");
-        }, 10);
-      });
-    };
-
+    let update = () => {};
     const mock = jest.fn();
 
     const root = document.createElement("div");
@@ -281,10 +274,9 @@ describe("useEffect", () => {
     const App = () => {
       const [, setData] = useState("");
 
+      update = () => setData("123");
+
       useEffect(() => {
-        getDelayedResponse().then((response) => {
-          setData(response);
-        });
         mock();
       }, []);
 
@@ -295,7 +287,7 @@ describe("useEffect", () => {
 
     render(tree, root);
 
-    jest.runAllTimers();
+    update();
 
     expect(mock).toHaveBeenCalledTimes(1);
   });
