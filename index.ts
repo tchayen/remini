@@ -42,8 +42,6 @@ const Modal = ({ username }: { username: string }) => {
       });
   }, [username]);
 
-  console.log(user);
-
   let result: RElement = null;
   if (loading) {
     result = c("div", { class: "text-sm text-gray-400" }, "Loading...");
