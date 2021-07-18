@@ -130,7 +130,6 @@ const update = (node: RNode, element: RElement) => {
 
     if (current && expected && current.type === expected.type) {
       // UPDATE
-      // console.log("UPDATE");
       if (typeof current.type === "string") {
         updateDom(current, expected);
       }
@@ -139,7 +138,6 @@ const update = (node: RNode, element: RElement) => {
       update(current, expected);
     } else if (current && expected && current.type !== expected.type) {
       // REPLACE
-      // console.log("REPLACE");
       let newNode: RNode = {
         props: expected.props,
         type: expected.type,
@@ -155,7 +153,7 @@ const update = (node: RNode, element: RElement) => {
 
         const firstParentWithDom = findClosestDom(node);
         if (!firstParentWithDom.dom) {
-          throw new Error("Missing DOM");
+          throw new Error("Missing DOM.");
         }
 
         insertDom(firstParentWithDom.dom, newNode, expected);
@@ -187,7 +185,6 @@ const update = (node: RNode, element: RElement) => {
       update(newNode, expected);
     } else if (!current) {
       // ADD
-      // console.log("ADD");
       let newNode: RNode;
       if (expected === null) {
         newNode = {
@@ -204,12 +201,10 @@ const update = (node: RNode, element: RElement) => {
           descendants: [],
         };
 
-        // TODO: find out why top level node doesn't get props if it is a tag
-
         if (typeof expected.type === "string") {
           const firstParentWithDom = findClosestDom(node);
           if (!firstParentWithDom.dom) {
-            throw new Error("Missing DOM");
+            throw new Error("Missing DOM.");
           }
 
           insertDom(firstParentWithDom.dom, newNode, expected);
@@ -224,7 +219,6 @@ const update = (node: RNode, element: RElement) => {
       update(newNode, expected);
     } else if (!expected) {
       // REMOVE
-      // console.log("REMOVE");
       const indexOfCurrent = node.descendants.indexOf(current);
 
       if (current.type === null) {

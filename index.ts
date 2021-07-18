@@ -170,6 +170,6 @@ const HackerNews = () => {
   );
 };
 
-const tree = c("div", {}, c(HackerNews));
+const tree = c(HackerNews);
 
 render(tree, root!);

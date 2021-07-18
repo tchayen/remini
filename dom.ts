@@ -10,7 +10,7 @@ export const insertDom = (parent: Node, node: RNode, element: RElement) => {
     typeof element === "string" ||
     typeof element.type === "function"
   ) {
-    throw new Error("This is not supposed to happen");
+    throw new Error("This is not supposed to happen.");
   }
 
   const html = document.createElement(element.type);
