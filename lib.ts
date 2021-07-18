@@ -267,6 +267,26 @@ const update = (node: RNode, element: RElement) => {
   _hookIndex = previousIndex;
 };
 
+type Job = { node: RNode; element: RElement };
+let updating = false;
+let tasks: Job[] = [];
+const runUpdateLoop = (node: RNode, element: RElement) => {
+  tasks.push({ node, element });
+
+  if (updating) {
+    return;
+  }
+
+  updating = true;
+
+  let current: Job | undefined;
+  while ((current = tasks.shift())) {
+    update(current.node, current.element);
+  }
+
+  updating = false;
+};
+
 export const useEffect = (
   callback: () => void | (() => void),
   dependencies?: any[]
@@ -345,25 +365,5 @@ export const render = (element: RElement, container: HTMLElement) => {
     descendants: [],
   };
 
-  runUpdateLoop(_rootNode, element);
-};
-
-type Job = { node: RNode; element: RElement };
-let updating = false;
-let tasks: Job[] = [];
-const runUpdateLoop = (node: RNode, element: RElement) => {
-  tasks.push({ node, element });
-
-  if (updating) {
-    return;
-  }
-
-  updating = true;
-
-  let current: Job | undefined;
-  while ((current = tasks.shift())) {
-    update(current.node, current.element);
-  }
-
-  updating = false;
+  runUpdateLoop(_rootNode, createElement("div", {}, element));
 };

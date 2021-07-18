@@ -33,10 +33,6 @@ render(c("div", {}, c(Counter)), document.getElementById("root"));
 - Context API
 - `<Fragment />`
 
-## Known bugs
-- Top level node must be an HTML tag.
-- Top level node won't receive props.
-
 ## Useful reading
 
 [Blogged Answers: A (Mostly) Complete Guide to React Rendering Behavior](https://blog.isquaredsoftware.com/2020/05/blogged-answers-a-mostly-complete-guide-to-react-rendering-behavior/)

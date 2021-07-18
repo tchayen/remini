@@ -134,12 +134,13 @@ describe("render", () => {
 
     render(tree, root);
 
-    expect(_rootNode?.descendants).toHaveLength(2);
+    expect(_rootNode?.descendants[0].descendants).toHaveLength(2);
   });
 
   it("works with state", () => {
     const getPrintedNumber = () => {
-      const node = _rootNode!.descendants[0].descendants[0].descendants[1];
+      const node =
+        _rootNode!.descendants[0].descendants[0].descendants[0].descendants[1];
       if (node.type === null) {
         throw new Error("Encountered null node.");
       }
@@ -197,7 +198,7 @@ describe("render", () => {
       );
     };
 
-    const tree = c("div", {}, c(Alter));
+    const tree = c(Alter);
 
     render(tree, root);
 
@@ -239,21 +240,17 @@ describe("useState", () => {
         nextValue = value;
       };
 
-      return c("div", {}, c("span", {}, `${value}`));
+      return c("span", {}, `${value}`);
     };
 
-    render(c("div", {}, c(App)), root);
+    render(c(App), root);
 
-    expect(document.body.innerHTML).toBe(
-      "<div><div><span>0</span></div></div>"
-    );
+    expect(document.body.innerHTML).toBe("<div><span>0</span></div>");
 
     update();
 
     expect(nextValue).toBe(0);
-    expect(document.body.innerHTML).toBe(
-      "<div><div><span>1</span></div></div>"
-    );
+    expect(document.body.innerHTML).toBe("<div><span>1</span></div>");
   });
 
   it("can be called more than once", () => {
@@ -278,7 +275,7 @@ describe("useState", () => {
       return c("div", {}, c("span", {}, a), c("span", {}, b.toString()));
     };
 
-    render(c("div", {}, c(App)), root);
+    render(c(App), root);
 
     expect(document.body.innerHTML).toBe(
       "<div><div><span>a</span><span>0</span></div></div>"
@@ -315,10 +312,10 @@ describe("useEffect", () => {
         mock();
       }, []);
 
-      return c("div", {}, c("span", {}, "Hello"));
+      return c("span", {}, "Hello");
     };
 
-    const tree = c("div", {}, c(App));
+    const tree = c(App);
 
     render(tree, root);
 
@@ -343,10 +340,10 @@ describe("useEffect", () => {
         mock();
       });
 
-      return c("div", {}, c("span", {}, "Hello"));
+      return c("span", {}, "Hello");
     };
 
-    const tree = c("div", {}, c(App));
+    const tree = c(App);
 
     render(tree, root);
 
@@ -369,7 +366,7 @@ describe("useEffect", () => {
       return c("div", {}, c("span", {}, user ? user.username : "Anonymous"));
     };
 
-    const tree = c("div", {}, c(Profile, { username: "John" }));
+    const tree = c(Profile, { username: "John" });
 
     render(tree, root);
 
@@ -401,7 +398,7 @@ describe("useEffect", () => {
       return c("div", {}, show ? c(Goodbye) : null);
     };
 
-    render(c("div", {}, c(App)), root);
+    render(c(App), root);
 
     expect(mock).toHaveBeenCalledTimes(1);
     expect(document.body.innerHTML).toBe("<div><div></div></div>");
@@ -422,7 +419,7 @@ describe("DOM", () => {
     render(tree, root);
 
     expect(document.body.innerHTML).toBe(
-      '<div><a href="https://google.com">Google</a></div>'
+      '<div><div id="root"><a href="https://google.com">Google</a></div></div>'
     );
   });
 
@@ -444,7 +441,7 @@ describe("DOM", () => {
     render(tree, root);
 
     expect(document.body.innerHTML).toBe(
-      "<div><h1>Hello world</h1><span>Text</span></div>"
+      "<div><div><h1>Hello world</h1><span>Text</span></div></div>"
     );
   });
 
@@ -455,10 +452,10 @@ describe("DOM", () => {
     const onClick = jest.fn();
 
     const Click = () => {
-      return c("div", {}, c("button", { id: "button", onClick }, "Click"));
+      return c("button", { id: "button", onClick }, "Click");
     };
 
-    const tree = c("div", {}, c(Click));
+    const tree = c(Click);
 
     render(tree, root);
 
@@ -492,7 +489,7 @@ describe("DOM", () => {
       );
     };
 
-    const tree = c("div", {}, c(Counter));
+    const tree = c(Counter);
 
     render(tree, root);
 
