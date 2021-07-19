@@ -321,7 +321,9 @@ export const useEffect = (
   _hookIndex += 1;
 };
 
-export const useState = <T>(initial: T): [T, (next: T) => void] => {
+export const useState = <T>(
+  initial: T
+): [T, (next: T | ((current: T) => T)) => void] => {
   // Capture the current node.
   let c = _currentNode;
   let i = _hookIndex;
@@ -336,12 +338,16 @@ export const useState = <T>(initial: T): [T, (next: T) => void] => {
 
   const hook = c.hooks[i];
 
-  const setState = (next: T) => {
+  const setState = (next: T | ((current: T) => T)) => {
     if (!c || c.type === null || !c.hooks) {
       throw new Error("Executing useState for non-function element.");
     }
 
-    hook.state = next;
+    if (typeof next === "function") {
+      hook.state = next(hook.state);
+    } else {
+      hook.state = next;
+    }
 
     runUpdateLoop(c, null);
   };

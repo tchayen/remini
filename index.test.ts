@@ -293,6 +293,33 @@ describe("useState", () => {
       "<div><div><span>b</span><span>1</span></div></div>"
     );
   });
+
+  it("provides updater form", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const Counter = () => {
+      const [count, setCount] = useState(0);
+
+      useEffect(() => {
+        const id = setInterval(() => {
+          setCount((c) => c + 1);
+        }, 1000);
+        return () => clearInterval(id);
+      }, []);
+
+      return c("div", {}, `${count}`);
+    };
+
+    render(c(Counter), root);
+    expect(document.body.innerHTML).toBe("<div><div>0</div></div>");
+
+    jest.runOnlyPendingTimers();
+    expect(document.body.innerHTML).toBe("<div><div>1</div></div>");
+
+    jest.runOnlyPendingTimers();
+    expect(document.body.innerHTML).toBe("<div><div>2</div></div>");
+  });
 });
 
 describe("useEffect", () => {
