@@ -18,7 +18,7 @@ const Counter = () => {
   );
 };
 
-render(c("div", {}, c(Counter)), document.getElementById("root"));
+render(c(Counter), document.getElementById("root"));
 ```
 
 ## How to play with it?
@@ -28,10 +28,11 @@ render(c("div", {}, c(Counter)), document.getElementById("root"));
 `yarn test` to see the tests passing.
 
 ## Might come later
-- `ref`s
-- Accepting `style` object as alternative to string prop
-- Context API
-- `<Fragment />`
+- [x] Accepting `style` object as alternative to string prop
+- [ ] Updater version of `setState`
+- [ ] `ref`s
+- [ ] Context API
+- [ ] `<Fragment />`
 
 ## Useful reading
 
