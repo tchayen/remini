@@ -3,6 +3,19 @@ import { RElement, RNode, RNodeReal } from "./lib";
 const isEvent = (key: string) => !!key.match(new RegExp("on[A-Z].*"));
 const eventToKeyword = (key: string) => key.replace("on", "").toLowerCase();
 
+const camelCaseToKebab = (str: string) =>
+  str.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
+
+const styleObjectToString = (style: { [key: string]: any }) => {
+  const string = Object.keys(style)
+    .map((key) => {
+      const value = style[key];
+      return `${camelCaseToKebab(key)}:${value}`;
+    })
+    .join(";");
+  return string;
+};
+
 export const insertDom = (parent: Node, node: RNode, element: RElement) => {
   if (
     node.type === null ||
@@ -18,6 +31,10 @@ export const insertDom = (parent: Node, node: RNode, element: RElement) => {
   Object.entries(element.props).forEach(([key, value]) => {
     if (key === "children") {
       // Skip.
+    } else if (key === "style") {
+      const style =
+        typeof value === "string" ? value : styleObjectToString(value);
+      html.setAttribute(key, style);
     } else if (isEvent(key)) {
       html.addEventListener(eventToKeyword(key), value);
     } else {
@@ -62,7 +79,15 @@ export const updateDom = (current: RNode, expected: RElement) => {
 
       // Prop will be updated.
       if (expected.props[key]) {
-        html.setAttribute(key, expected.props[key] as string);
+        if (key === "style") {
+          const style =
+            typeof expected.props[key] === "string"
+              ? expected.props[key]
+              : styleObjectToString(expected.props[key]);
+          html.setAttribute(key, style);
+        } else {
+          html.setAttribute(key, expected.props[key] as string);
+        }
       }
     }
   });
@@ -75,7 +100,15 @@ export const updateDom = (current: RNode, expected: RElement) => {
     } else {
       // Prop will be added.
       if (!current.props[key]) {
-        html.setAttribute(key, expected.props[key] as string);
+        if (key === "style") {
+          const style =
+            typeof current.props[key] === "string"
+              ? current.props[key]
+              : styleObjectToString(current.props[key]);
+          html.setAttribute(key, style);
+        } else {
+          html.setAttribute(key, expected.props[key] as string);
+        }
       }
     }
   });

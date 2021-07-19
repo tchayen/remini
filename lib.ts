@@ -1,23 +1,28 @@
 import { findClosestDom, insertDom, removeDom, updateDom } from "./dom";
 
-export type RenderFunction = (props: any) => RElement;
-
-type Props = {
+type ElementProps = {
   children: RElement[] | string;
   [key: string]: any;
 };
 
+type Props = {
+  [key: string]: any;
+  style?: object | string;
+};
+
+export type RenderFunction = (props: Props) => RElement;
+
 export type RElement =
   | {
       type: RenderFunction | string;
-      props: Props;
+      props: ElementProps;
     }
   | string
   | null;
 
 export type RNodeReal = {
   type: RenderFunction | string;
-  props: Props;
+  props: ElementProps;
   parent: RNode | null;
   descendants: RNode[];
   dom?: Node;
@@ -35,25 +40,25 @@ export type RNode =
 
 export function createElement(
   component: RenderFunction | string,
-  props: any,
+  props: Props,
   children: RElement[]
 ): RElement;
 
 export function createElement(
   component: RenderFunction | string,
-  props?: any,
+  props?: Props,
   ...children: RElement[]
 ): RElement;
 
 export function createElement(
   component: RenderFunction | string,
-  props?: any,
+  props?: Props,
   children?: string
 ): RElement;
 
 export function createElement(
   component: RenderFunction | string,
-  props: any,
+  props: Props,
   ...children: any
 ): RElement {
   let normalizedChildren;

@@ -82,13 +82,13 @@ const Author = ({ username }: { username: string }) => {
 
   return c(
     "div",
-    { class: "mr-2", style: "position: relative" },
+    { class: "mr-2", style: { position: "relative" } },
     show
       ? c(
           "div",
           {
             class: "bg-white p-2 shadow-xl rounded",
-            style: "position: absolute",
+            style: { position: "absolute" },
           },
           c(Modal, { username })
         )
