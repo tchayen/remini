@@ -357,6 +357,32 @@ export const useState = <T>(
   return [hook.state, setState];
 };
 
+export const useMemo = <T>(callback: () => T, dependencies: any[]): T => {
+  if (!_currentNode || _currentNode.type === null || !_currentNode.hooks) {
+    throw new Error("Can't call useMemo on this node.");
+  }
+
+  if (_currentNode.hooks[_hookIndex] === undefined) {
+    _currentNode.hooks[_hookIndex] = { memo: callback(), dependencies };
+  } else {
+    let shouldRun = false;
+    for (let j = 0; j < dependencies.length; j++) {
+      if (dependencies[j] !== _currentNode.hooks[_hookIndex].dependencies[j]) {
+        shouldRun = true;
+      }
+    }
+
+    if (shouldRun) {
+      const memo = callback();
+      _currentNode.hooks[_hookIndex] = { memo, dependencies };
+    }
+  }
+
+  _hookIndex += 1;
+
+  return _currentNode.hooks[_hookIndex - 1].memo;
+};
+
 export let _rootNode: RNode | null = null;
 
 export const render = (element: RElement, container: HTMLElement) => {

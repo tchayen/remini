@@ -2,6 +2,7 @@ import {
   createElement as c,
   render,
   useEffect,
+  useMemo,
   useState,
   _rootNode,
 } from "./lib";
@@ -429,6 +430,78 @@ describe("useEffect", () => {
 
     expect(mock).toHaveBeenCalledTimes(1);
     expect(document.body.innerHTML).toBe("<div><div></div></div>");
+  });
+});
+
+describe("useMemo", () => {
+  it("works", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+    const mock = jest.fn();
+
+    const App = () => {
+      const _memo = useMemo(mock, []);
+      const [, setState] = useState(0);
+
+      useEffect(() => {
+        console.log("aaa");
+        setTimeout(() => setState(1), 1000);
+      }, []);
+
+      return c("div", {}, "Test");
+    };
+
+    const tree = c(App);
+    render(tree, root);
+
+    expect(mock).toHaveBeenCalledTimes(1);
+
+    jest.runOnlyPendingTimers();
+
+    expect(mock).toHaveBeenCalledTimes(1);
+  });
+
+  it("works with deps", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+    const mock = jest.fn();
+
+    const User = ({ username }: { username: string }) => {
+      const uppercase = useMemo(() => {
+        mock();
+        return username.toUpperCase();
+      }, [username]);
+
+      return c("span", {}, uppercase);
+    };
+
+    const App = () => {
+      const [username, setUsername] = useState("Alice");
+      const [, setCounter] = useState(0);
+
+      useEffect(() => {
+        setTimeout(() => {
+          setCounter(1);
+        }, 500);
+
+        setTimeout(() => {
+          setUsername("Bob");
+        }, 1000);
+      }, []);
+
+      return c(User, { username });
+    };
+
+    const tree = c(App);
+    render(tree, root);
+
+    expect(mock).toHaveBeenCalledTimes(1);
+
+    jest.advanceTimersByTime(501);
+    expect(mock).toHaveBeenCalledTimes(1);
+
+    jest.advanceTimersByTime(501);
+    expect(mock).toHaveBeenCalledTimes(2);
   });
 });
 
