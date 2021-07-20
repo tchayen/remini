@@ -86,6 +86,7 @@ const getName = (type: RenderFunction | string) => {
 
 let _currentNode: RNode | null = null;
 let _hookIndex = 0;
+let _lookingForRef: { current: any } | null = null;
 
 const update = (node: RNode, element: RElement) => {
   let previousNode = _currentNode;
@@ -213,6 +214,14 @@ const update = (node: RNode, element: RElement) => {
           }
 
           insertDom(firstParentWithDom.dom, newNode, expected);
+
+          if (
+            expected.props.ref === _lookingForRef &&
+            _lookingForRef !== null
+          ) {
+            _lookingForRef.current = newNode.dom;
+            _lookingForRef = null;
+          }
         }
 
         if (typeof expected.type === "function") {
@@ -269,6 +278,8 @@ const update = (node: RNode, element: RElement) => {
 type Job = { node: RNode; element: RElement };
 let updating = false;
 let tasks: Job[] = [];
+let effects: (() => void)[] = [];
+
 const runUpdateLoop = (node: RNode, element: RElement) => {
   tasks.push({ node, element });
 
@@ -281,6 +292,11 @@ const runUpdateLoop = (node: RNode, element: RElement) => {
   let current: Job | undefined;
   while ((current = tasks.shift())) {
     update(current.node, current.element);
+
+    let effect: (() => void) | undefined;
+    while ((effect = effects.shift())) {
+      effect();
+    }
   }
 
   updating = false;
@@ -290,33 +306,39 @@ export const useEffect = (
   callback: () => void | (() => void),
   dependencies?: any[]
 ) => {
-  if (!_currentNode || _currentNode.type === null || !_currentNode.hooks) {
-    throw new Error("Executing useState for non-function element.");
-  }
+  // Capture the current node.
+  let c = _currentNode;
+  let i = _hookIndex;
 
-  if (_currentNode.hooks[_hookIndex] === undefined) {
-    // INITIALIZE
-    _currentNode.hooks[_hookIndex] = { dependencies };
-    const cleanup = callback();
-    _currentNode.hooks[_hookIndex].cleanup = cleanup;
-  } else if (dependencies) {
-    // COMPARE DEPENDENCIES
-    let shouldRun = false;
-    for (let j = 0; j < dependencies.length; j++) {
-      if (dependencies[j] !== _currentNode.hooks[_hookIndex].dependencies[j]) {
-        shouldRun = true;
-      }
+  effects.push(() => {
+    if (!c || c.type === null || !c.hooks) {
+      throw new Error("Executing useState for non-function element.");
     }
 
-    if (shouldRun) {
+    if (c.hooks[i] === undefined) {
+      // INITIALIZE
+      c.hooks[i] = { dependencies };
       const cleanup = callback();
-      _currentNode.hooks[_hookIndex].cleanup = { cleanup, dependencies };
+      c.hooks[i].cleanup = cleanup;
+    } else if (dependencies) {
+      // COMPARE DEPENDENCIES
+      let shouldRun = false;
+      for (let j = 0; j < dependencies.length; j++) {
+        if (dependencies[j] !== c.hooks[i].dependencies[j]) {
+          shouldRun = true;
+        }
+      }
+
+      if (shouldRun) {
+        const cleanup = callback();
+        c.hooks[i].cleanup = { cleanup, dependencies };
+      }
+    } else if (!dependencies) {
+      // RUN ALWAYS
+      const cleanup = callback();
+      c.hooks[i] = { cleanup, dependencies };
     }
-  } else if (!dependencies) {
-    // RUN ALWAYS
-    const cleanup = callback();
-    _currentNode.hooks[_hookIndex] = { cleanup, dependencies };
-  }
+  });
 
   _hookIndex += 1;
 };
@@ -344,6 +366,7 @@ export const useState = <T>(
     }
 
     if (typeof next === "function") {
+      // TODO: fix type.
       hook.state = next(hook.state);
     } else {
       hook.state = next;
@@ -355,6 +378,17 @@ export const useState = <T>(
   _hookIndex += 1;
 
   return [hook.state, setState];
+};
+
+export const useRef = <T>(): { current: T | null } => {
+  if (!_currentNode || _currentNode.type === null) {
+    throw new Error("Can't use useRef on this node.");
+  }
+
+  const ref = { current: null };
+  _lookingForRef = ref;
+
+  return ref;
 };
 
 export const useMemo = <T>(callback: () => T, dependencies: any[]): T => {

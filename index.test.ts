@@ -3,6 +3,7 @@ import {
   render,
   useEffect,
   useMemo,
+  useRef,
   useState,
   _rootNode,
 } from "./lib";
@@ -433,6 +434,31 @@ describe("useEffect", () => {
   });
 });
 
+describe("useRef", () => {
+  it("works", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    let availableInEffect: any = null;
+
+    const App = () => {
+      const ref = useRef<HTMLSpanElement>();
+
+      useEffect(() => {
+        availableInEffect = ref.current;
+      }, []);
+
+      return c("div", {}, c("span", { ref }, "test"));
+    };
+
+    const tree = c(App);
+    render(tree, root);
+
+    expect(availableInEffect).not.toBeNull();
+    expect(availableInEffect.tagName).toBe("SPAN");
+  });
+});
+
 describe("useMemo", () => {
   it("works", () => {
     const root = document.createElement("div");
@@ -444,7 +470,6 @@ describe("useMemo", () => {
       const [, setState] = useState(0);
 
       useEffect(() => {
-        console.log("aaa");
         setTimeout(() => setState(1), 1000);
       }, []);
 
