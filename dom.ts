@@ -1,4 +1,10 @@
-import { RElement, RNode, RNodeReal, SPECIAL_TYPES } from "./lib";
+import {
+  RElement,
+  RenderFunction,
+  RNode,
+  RNodeReal,
+  SPECIAL_TYPES,
+} from "./lib";
 
 const isEvent = (key: string) => !!key.match(new RegExp("on[A-Z].*"));
 const eventToKeyword = (key: string) => key.replace("on", "").toLowerCase();
@@ -194,6 +200,29 @@ export const findClosestDom = (node: RNode): RNodeReal => {
 
   if (current.dom === undefined) {
     throw new Error("Node is missing DOM.");
+  }
+
+  return current;
+};
+
+export const findClosestComponent = (node: RNode): RNodeReal => {
+  let current = node;
+
+  while (
+    current.type !== null &&
+    current.parent &&
+    "dom" in current &&
+    current.dom
+  ) {
+    current = current.parent;
+  }
+
+  if (current.type === null) {
+    throw new Error("Parent node was null.");
+  }
+
+  if (current.type === SPECIAL_TYPES.PROVIDER) {
+    throw new Error("Node is a provider.");
   }
 
   return current;

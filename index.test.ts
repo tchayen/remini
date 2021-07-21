@@ -477,6 +477,40 @@ describe("useRef", () => {
     expect(availableInEffect).not.toBeNull();
     expect(availableInEffect.tagName).toBe("SPAN");
   });
+
+  it("works with two refs in one component", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    let availableInEffect1: any = null;
+    let availableInEffect2: any = null;
+
+    const App = () => {
+      const ref1 = useRef<HTMLSpanElement>();
+      const ref2 = useRef<HTMLButtonElement>();
+
+      useEffect(() => {
+        availableInEffect1 = ref1.current;
+        availableInEffect2 = ref2.current;
+      }, []);
+
+      return c(
+        "div",
+        {},
+        c("span", { ref: ref1 }, "test"),
+        c("button", { ref: ref2 }, "test")
+      );
+    };
+
+    const tree = c(App);
+    render(tree, root);
+
+    expect(availableInEffect1).not.toBeNull();
+    expect(availableInEffect1.tagName).toBe("SPAN");
+
+    expect(availableInEffect2).not.toBeNull();
+    expect(availableInEffect2.tagName).toBe("BUTTON");
+  });
 });
 
 describe("useMemo", () => {

@@ -1,4 +1,10 @@
-import { findClosestDom, insertDom, removeDom, updateDom } from "./dom";
+import {
+  findClosestComponent,
+  findClosestDom,
+  insertDom,
+  removeDom,
+  updateDom,
+} from "./dom";
 
 type Children = RElement | RElement[] | string;
 
@@ -92,13 +98,8 @@ export function createElement(
 
 let _currentNode: RNode | null = null;
 let _hookIndex = 0;
-let _lookingForRef: { current: any } | null = null;
 
-// TODO CONTEXT: fix typings below.
-// Current value coming from closest provider.
 const contextValues: Map<Context<any>, any> = new Map();
-
-const contextRegistry: Map<Context<any>, RNode[]> = new Map();
 
 const update = (node: RNode, element: RElement) => {
   let previousNode = _currentNode;
@@ -177,7 +178,6 @@ const update = (node: RNode, element: RElement) => {
 
       if (expected.type === SPECIAL_TYPES.PROVIDER) {
         newNode = {
-          // TODO CONTEXT: fix type.
           context: expected.props.context,
           props: expected.props,
           type: expected.type,
@@ -242,7 +242,6 @@ const update = (node: RNode, element: RElement) => {
             type: expected.type,
             parent: node,
             descendants: [],
-            // TODO CONTEXT: fix type.
             context: expected.props.context,
           };
         } else {
@@ -260,12 +259,13 @@ const update = (node: RNode, element: RElement) => {
 
             insertDom(firstParentWithDom.dom, newNode, expected);
 
-            if (
-              expected.props.ref === _lookingForRef &&
-              _lookingForRef !== null
-            ) {
-              _lookingForRef.current = newNode.dom;
-              _lookingForRef = null;
+            const closestComponent = findClosestComponent(node);
+            if ("hooks" in closestComponent && closestComponent.hooks) {
+              for (const hook of closestComponent.hooks) {
+                if ("current" in hook && expected.props.ref === hook) {
+                  hook.current = newNode.dom;
+                }
+              }
             }
           }
 
@@ -284,9 +284,6 @@ const update = (node: RNode, element: RElement) => {
       if (current.type === null) {
         return;
       }
-
-      // TODO CONTEXT:
-      // Remove all mappings context->node pointing to this node.
 
       if (typeof current.type === "string" && "dom" in current) {
         removeDom(current);
@@ -442,12 +439,20 @@ export const useState = <T>(
 };
 
 export const useRef = <T>(): { current: T | null } => {
-  if (!_currentNode || _currentNode.type === null) {
+  if (
+    !_currentNode ||
+    _currentNode.type === null ||
+    !("hooks" in _currentNode) ||
+    !_currentNode.hooks
+  ) {
     throw new Error("Can't use useRef on this node.");
   }
 
   const ref = { current: null };
-  _lookingForRef = ref;
+
+  _currentNode.hooks[_hookIndex] = ref;
+
+  _hookIndex += 1;
 
   return ref;
 };
@@ -485,23 +490,10 @@ type Context<T> = {
 };
 
 export const createContext = <T>(): Context<T> => {
-  // TODO CONTEXT: proper typing for this.
   // @ts-ignore
   const context: Context<T> = {};
 
   const Provider = <T>({ children, value }: ProviderProps<T>): RElement => {
-    useEffect(() => {
-      contextRegistry.set(context, []);
-    }, []);
-
-    useEffect(() => {
-      // Value changed, update it and rerender all subscribed nodes.
-      const nodes = contextRegistry.get(context) || [];
-      nodes.forEach((node) => {
-        update(node, null);
-      });
-    }, [value]);
-
     return {
       type: SPECIAL_TYPES.PROVIDER,
       props: { value, children, context },
