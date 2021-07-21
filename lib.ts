@@ -259,8 +259,13 @@ const update = (node: RNode, element: RElement) => {
 
             insertDom(firstParentWithDom.dom, newNode, expected);
 
+            // Handle useRef.
             const closestComponent = findClosestComponent(node);
-            if ("hooks" in closestComponent && closestComponent.hooks) {
+            if (
+              closestComponent &&
+              "hooks" in closestComponent &&
+              closestComponent.hooks
+            ) {
               for (const hook of closestComponent.hooks) {
                 if ("current" in hook && expected.props.ref === hook) {
                   hook.current = newNode.dom;

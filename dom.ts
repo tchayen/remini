@@ -205,7 +205,7 @@ export const findClosestDom = (node: RNode): RNodeReal => {
   return current;
 };
 
-export const findClosestComponent = (node: RNode): RNodeReal => {
+export const findClosestComponent = (node: RNode): RNodeReal | null => {
   let current = node;
 
   while (
@@ -218,11 +218,11 @@ export const findClosestComponent = (node: RNode): RNodeReal => {
   }
 
   if (current.type === null) {
-    throw new Error("Parent node was null.");
+    return null;
   }
 
   if (current.type === SPECIAL_TYPES.PROVIDER) {
-    throw new Error("Node is a provider.");
+    return null;
   }
 
   return current;
