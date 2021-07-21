@@ -18,18 +18,18 @@ export enum SPECIAL_TYPES {
   PROVIDER = 1,
 }
 
-export type ComponentType = RenderFunction | string | SPECIAL_TYPES;
+export type ComponentType = RenderFunction | string;
 
 export type RElement =
   | {
-      type: ComponentType;
+      type: ComponentType | SPECIAL_TYPES;
       props: ElementProps;
     }
   | string
   | null;
 
 export type RNodeReal = {
-  type: ComponentType;
+  type: RenderFunction | string;
   props: ElementProps;
   parent: RNode | null;
   descendants: RNode[];
@@ -126,7 +126,7 @@ const update = (node: RNode, element: RElement) => {
     typeof node.type === "string" ||
     node.type === SPECIAL_TYPES.PROVIDER
   ) {
-    if ("context" in node) {
+    if (node.type === SPECIAL_TYPES.PROVIDER) {
       const currentValue = contextValues.get(node.context);
       replacedContext = { context: node.context, value: currentValue };
       contextValues.set(node.context, node.props.value);
@@ -173,33 +173,41 @@ const update = (node: RNode, element: RElement) => {
       update(current, expected);
     } else if (current && expected && current.type !== expected.type) {
       // REPLACE
-      let newNode: RNode = {
-        props: expected.props,
-        type: expected.type,
-        parent: node,
-        descendants: [],
-      };
+      let newNode: RNode;
 
       if (expected.type === SPECIAL_TYPES.PROVIDER) {
-        // TODO CONTEXT: fix type.
-        newNode.context = expected.props.context;
-      }
+        newNode = {
+          // TODO CONTEXT: fix type.
+          context: expected.props.context,
+          props: expected.props,
+          type: expected.type,
+          parent: node,
+          descendants: [],
+        };
+      } else {
+        newNode = {
+          props: expected.props,
+          type: expected.type,
+          parent: node,
+          descendants: [],
+        };
 
-      if (typeof expected.type === "string") {
-        if ("dom" in current) {
-          removeDom(current);
+        if (typeof expected.type === "string") {
+          if ("dom" in current) {
+            removeDom(current);
+          }
+
+          const firstParentWithDom = findClosestDom(node);
+          if (!firstParentWithDom.dom) {
+            throw new Error("Missing DOM.");
+          }
+
+          insertDom(firstParentWithDom.dom, newNode, expected);
         }
 
-        const firstParentWithDom = findClosestDom(node);
-        if (!firstParentWithDom.dom) {
-          throw new Error("Missing DOM.");
+        if (typeof expected.type === "function") {
+          newNode.hooks = [];
         }
-
-        insertDom(firstParentWithDom.dom, newNode, expected);
-      }
-
-      if (typeof expected.type === "function") {
-        newNode.hooks = [];
       }
 
       if (typeof current.type === "function" && "hooks" in current) {
@@ -228,37 +236,42 @@ const update = (node: RNode, element: RElement) => {
           descendants: [],
         };
       } else {
-        newNode = {
-          props: expected.props,
-          type: expected.type,
-          parent: node,
-          descendants: [],
-        };
-
         if (expected.type === SPECIAL_TYPES.PROVIDER) {
-          // TODO CONTEXT: fix type.
-          newNode.context = expected.props.context;
-        }
+          newNode = {
+            props: expected.props,
+            type: expected.type,
+            parent: node,
+            descendants: [],
+            // TODO CONTEXT: fix type.
+            context: expected.props.context,
+          };
+        } else {
+          newNode = {
+            props: expected.props,
+            type: expected.type,
+            parent: node,
+            descendants: [],
+          };
+          if (typeof expected.type === "string") {
+            const firstParentWithDom = findClosestDom(node);
+            if (!firstParentWithDom.dom) {
+              throw new Error("Missing DOM.");
+            }
 
-        if (typeof expected.type === "string") {
-          const firstParentWithDom = findClosestDom(node);
-          if (!firstParentWithDom.dom) {
-            throw new Error("Missing DOM.");
+            insertDom(firstParentWithDom.dom, newNode, expected);
+
+            if (
+              expected.props.ref === _lookingForRef &&
+              _lookingForRef !== null
+            ) {
+              _lookingForRef.current = newNode.dom;
+              _lookingForRef = null;
+            }
           }
 
-          insertDom(firstParentWithDom.dom, newNode, expected);
-
-          if (
-            expected.props.ref === _lookingForRef &&
-            _lookingForRef !== null
-          ) {
-            _lookingForRef.current = newNode.dom;
-            _lookingForRef = null;
+          if (typeof expected.type === "function") {
+            newNode.hooks = [];
           }
-        }
-
-        if (typeof expected.type === "function") {
-          newNode.hooks = [];
         }
       }
 
@@ -308,7 +321,7 @@ const update = (node: RNode, element: RElement) => {
   });
 
   if (node.type === SPECIAL_TYPES.PROVIDER && replacedContext !== null) {
-    contextValues.set(replacedContext.context, replacedContext?.value);
+    contextValues.set(replacedContext.context, replacedContext.value);
   }
 
   _currentNode = previousNode;
