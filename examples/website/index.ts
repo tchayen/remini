@@ -1,13 +1,18 @@
-import { createContext, createElement as c, render, useState } from "../../lib";
+import {
+  createContext,
+  createElement as c,
+  render,
+  useContext,
+  useState,
+} from "../../lib";
 
 const root = document.getElementById("root");
 
-type Session = { token: string } | null;
-const SessionContext = createContext(null);
-
-// <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-// <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-// <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+type Session = {
+  token: string;
+  setToken: (token: string) => void;
+} | null;
+const SessionContext = createContext<Session>(null);
 
 const Input = ({ loading, ...props }: any) => {
   return c(
@@ -48,7 +53,7 @@ const Spinner = () => {
   return c(
     "svg",
     {
-      class: "animate-spin -ml-1 mr-3 h-5 w-5 text-white",
+      class: "animate-spin -ml-1 h-6 w-6 text-black",
       xmlns: "http://www.w3.org/2000/svg",
       fill: "none",
       viewBox: "0 0 24 24",
@@ -84,50 +89,96 @@ const LoginForm = () => {
 
   const onSubmit = (event: any) => {
     event.preventDefault();
-    console.log("halo", login, password);
     setLoading(true);
     setTimeout(() => {
+      console.log("onSubmit", session);
       setLoading(false);
+      // setToken('1234');
     }, 3000);
   };
 
-  console.log(loading);
-
   return c(
-    "form",
-    { onSubmit, class: "p-6 bg-black rounded w-96" },
-    c(Spinner),
-    c(Label, { for: "login" }, "Login"),
-    c(Input, {
-      login,
-      onInput: onLogin,
-      id: "login",
-      loading,
-      placeholder: "test@example.org",
-    }),
-    c(Label, { for: "password" }, "Password"),
-    c(Input, {
-      password,
-      onInput: onPassword,
-      id: "password",
-      type: "password",
-      loading,
-      placeholder: "********",
-    }),
-    c(Button, { loading }, "Sign in")
+    "div",
+    {},
+    c(
+      "form",
+      {
+        onSubmit,
+        class: `p-6 bg-white rounded w-96 relative ${
+          loading ? "opacity-60" : ""
+        }`,
+      },
+      loading
+        ? c(
+            "div",
+            {
+              class:
+                "w-full h-full flex justify-center items-center absolute inset-0",
+            },
+            c(Spinner)
+          )
+        : null,
+      c(Label, { for: "login" }, "Login"),
+      c(Input, {
+        login,
+        onInput: onLogin,
+        id: "login",
+        loading,
+        placeholder: "test@example.org",
+      }),
+      c(Label, { for: "password" }, "Password"),
+      c(Input, {
+        password,
+        onInput: onPassword,
+        id: "password",
+        type: "password",
+        loading,
+        placeholder: "********",
+      }),
+      c(Button, { loading }, "Sign in")
+    )
   );
 };
 
+const Page = () => {
+  const loadingElements = [0, 0, 0].map(() =>
+    c(
+      "div",
+      {
+        class: "border border-gray-200 rounded-md p-4 mb-4",
+      },
+      c(
+        "div",
+        { class: "animate-pulse flex space-x-4" },
+        c("div", { class: "rounded-full bg-gray-200 h-12 w-12" }),
+        c(
+          "div",
+          { class: "flex-1 space-y-4 py-1" },
+          c("div", { class: "h-4 bg-gray-200 rounded w-3/4" }),
+          c(
+            "div",
+            { class: "space-y-2" },
+            c("div", { class: "h-4 bg-gray-200 rounded" }),
+            c("div", { class: "h-4 bg-gray-200 rounded w-5/6" })
+          )
+        )
+      )
+    )
+  );
+
+  return c("div", { class: "max-w-sm w-full mx-auto" }, loadingElements);
+};
+
 const App = () => {
-  const [session, setSession] = useState<Session>(null);
+  const [token, setToken] = useState<string | null>(null);
 
   return c(
     SessionContext.Provider,
-    { value: session },
+    { value: { token, setToken } },
     c(
       "div",
       { class: "w-screen h-screen flex justify-center p-10 bg-gray-100" },
-      c("div", {}, c(LoginForm))
+      token ? c(Page) : c(LoginForm)
     )
   );
 };

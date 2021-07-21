@@ -348,7 +348,7 @@ export const useEffect = (
 
   effects.push(() => {
     if (!c || !("hooks" in c) || !c.hooks) {
-      throw new Error("Executing useState for non-function element.");
+      throw new Error("Executing useEffect for non-function element.");
     }
 
     if (c.hooks[i] === undefined) {
@@ -367,7 +367,7 @@ export const useEffect = (
 
       if (shouldRun) {
         const cleanup = callback();
-        c.hooks[i].cleanup = { cleanup, dependencies };
+        c.hooks[i] = { cleanup, dependencies };
       }
     } else if (!dependencies) {
       // RUN ALWAYS
@@ -401,8 +401,10 @@ export const useState = <T>(
       throw new Error("Executing useState for non-function element.");
     }
 
-    if (typeof next === "function") {
-      // TODO: fix type.
+    // https://github.com/microsoft/TypeScript/issues/37663#issuecomment-856866935
+    // This typing is not going to work if next comes from different iframe,
+    // window, realm.
+    if (next instanceof Function) {
       hook.state = next(hook.state);
     } else {
       hook.state = next;
@@ -459,8 +461,8 @@ type Context<T> = {
   Provider: ({ value, children }: ProviderProps<T>) => RElement;
 };
 
-export const createContext = <T>(defaultValue: T): Context<T> => {
-  const context: any = { value: defaultValue };
+export const createContext = <T>(): Context<T> => {
+  const context: Partial<Context<T>> = {};
 
   const Provider = <T>({ children, value }: ProviderProps<T>): RElement => {
     useEffect(() => {
@@ -482,7 +484,7 @@ export const createContext = <T>(defaultValue: T): Context<T> => {
   };
 
   context.Provider = Provider;
-  return context;
+  return context as Context<T>;
 };
 
 export const useContext = <T>(context: Context<T>): T => {

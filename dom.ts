@@ -14,7 +14,7 @@ const keyToAttribute = (key: string) => {
 const camelCaseToKebab = (str: string) =>
   str.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
 
-const styleObjectToString = (style: { [key: string]: any }) => {
+const styleObjectToString = (style: { [key: string]: string | number }) => {
   const string = Object.keys(style)
     .map((key) => {
       const value = style[key];
@@ -26,7 +26,6 @@ const styleObjectToString = (style: { [key: string]: any }) => {
 
 const createElement = (type: string) => {
   if (type === "svg" || type === "circle" || type === "path") {
-    console.log(type);
     return document.createElementNS("http://www.w3.org/2000/svg", type);
   } else {
     return document.createElement(type);
