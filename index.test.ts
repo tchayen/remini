@@ -324,6 +324,12 @@ describe("useState", () => {
     jest.runOnlyPendingTimers();
     expect(document.body.innerHTML).toBe("<div><div>2</div></div>");
   });
+
+  it("does not work outside component", () => {
+    expect(() => {
+      const [] = useState(0);
+    }).toThrowError("Executing useState for non-function element.");
+  });
 });
 
 describe("useEffect", () => {
