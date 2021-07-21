@@ -3,6 +3,14 @@ import { RElement, RNode, RNodeReal, SPECIAL_TYPES } from "./lib";
 const isEvent = (key: string) => !!key.match(new RegExp("on[A-Z].*"));
 const eventToKeyword = (key: string) => key.replace("on", "").toLowerCase();
 
+const keyToAttribute = (key: string) => {
+  if (key === "viewBox") {
+    return key;
+  } else {
+    return camelCaseToKebab(key);
+  }
+};
+
 const camelCaseToKebab = (str: string) =>
   str.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
 
@@ -14,6 +22,15 @@ const styleObjectToString = (style: { [key: string]: any }) => {
     })
     .join(";");
   return string;
+};
+
+const createElement = (type: string) => {
+  if (type === "svg" || type === "circle" || type === "path") {
+    console.log(type);
+    return document.createElementNS("http://www.w3.org/2000/svg", type);
+  } else {
+    return document.createElement(type);
+  }
 };
 
 export const insertDom = (parent: Node, node: RNode, element: RElement) => {
@@ -28,7 +45,7 @@ export const insertDom = (parent: Node, node: RNode, element: RElement) => {
     throw new Error("This is not supposed to happen.");
   }
 
-  const html = document.createElement(element.type);
+  const html = createElement(element.type);
 
   Object.entries(element.props).forEach(([key, value]) => {
     if (key === "children") {
@@ -40,7 +57,7 @@ export const insertDom = (parent: Node, node: RNode, element: RElement) => {
     } else if (isEvent(key)) {
       html.addEventListener(eventToKeyword(key), value);
     } else {
-      html.setAttribute(key, value as string);
+      html.setAttribute(keyToAttribute(key), value);
     }
   });
 
@@ -92,7 +109,7 @@ export const updateDom = (current: RNode, expected: RElement) => {
               : styleObjectToString(expected.props[key]);
           html.setAttribute(key, style);
         } else {
-          html.setAttribute(key, expected.props[key] as string);
+          html.setAttribute(keyToAttribute(key), expected.props[key] as string);
         }
       }
     }
@@ -113,7 +130,7 @@ export const updateDom = (current: RNode, expected: RElement) => {
               : styleObjectToString(current.props[key]);
           html.setAttribute(key, style);
         } else {
-          html.setAttribute(key, expected.props[key] as string);
+          html.setAttribute(keyToAttribute(key), expected.props[key] as string);
         }
       }
     }
