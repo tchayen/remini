@@ -590,7 +590,7 @@ describe("Context API", () => {
     document.body.appendChild(root);
 
     type Session = { username: string } | null;
-    const SessionContext = createContext<Session>(null);
+    const SessionContext = createContext<Session>();
 
     const User = () => {
       const session = useContext(SessionContext);
@@ -623,15 +623,93 @@ describe("Context API", () => {
     expect(document.body.innerHTML).toBe("<div><div>John</div></div>");
   });
 
+  it("works on subsequent rerenders", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    let readContext;
+
+    type Session = {
+      token: string | null;
+      setToken: (token: string) => void;
+    };
+    const SessionContext = createContext<Session>();
+
+    const LoginForm = () => {
+      const session = useContext(SessionContext);
+      console.log("LoginForm", session);
+      readContext = session.token;
+
+      const [login, setLogin] = useState("");
+      const [password, setPassword] = useState("");
+
+      const onLogin = (event: any) => {
+        setLogin(event.target.value);
+      };
+
+      const onPassword = (event: any) => {
+        setPassword(event.target.value);
+      };
+
+      const onClick = () => {
+        session.setToken("1234");
+      };
+
+      return c(
+        "div",
+        {},
+        c(
+          "form",
+          {},
+          c("label", { for: "login" }, "Login"),
+          c("input", {
+            login,
+            onInput: onLogin,
+            id: "login",
+          }),
+          c("label", { for: "password" }, "Password"),
+          c("input", {
+            password,
+            onInput: onPassword,
+            id: "password",
+            type: "password",
+          }),
+          c("button", { id: "button", onClick }, "Login")
+        )
+      );
+    };
+
+    const App = () => {
+      const [token, setToken] = useState<string | null>(null);
+      console.log("App", token);
+
+      return c(
+        SessionContext.Provider,
+        { value: { token, setToken } },
+        c("div", {}, token ? c("div", {}, "hi") : c(LoginForm))
+      );
+    };
+
+    const tree = c(App);
+    render(tree, root);
+
+    // expect(readContext).toBe(null);
+
+    const button = document.getElementById("button");
+    button?.click();
+
+    // expect(readContext).toBe(null);
+  });
+
   it("works with different contexts", () => {
     const root = document.createElement("div");
     document.body.appendChild(root);
 
     type Theme = "light" | "dark";
-    const ThemeContext = createContext<Theme>("light");
+    const ThemeContext = createContext<Theme>();
 
     type Session = { username: string } | null;
-    const SessionContext = createContext<Session>({ username: "Alice" });
+    const SessionContext = createContext<Session>();
 
     const User = () => {
       const theme = useContext(ThemeContext);
@@ -680,7 +758,7 @@ describe("Context API", () => {
     //
     // P(x) - provider with x as the value.
 
-    const Context = createContext(undefined);
+    const Context = createContext();
 
     const B = () => {
       const context = useContext(Context);

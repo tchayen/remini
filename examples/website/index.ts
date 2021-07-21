@@ -3,16 +3,17 @@ import {
   createElement as c,
   render,
   useContext,
+  useEffect,
   useState,
 } from "../../lib";
 
 const root = document.getElementById("root");
 
 type Session = {
-  token: string;
+  token: string | null;
   setToken: (token: string) => void;
-} | null;
-const SessionContext = createContext<Session>(null);
+};
+const SessionContext = createContext<Session>();
 
 const Input = ({ loading, ...props }: any) => {
   return c(
@@ -75,6 +76,7 @@ const Spinner = () => {
 };
 
 const LoginForm = () => {
+  const session = useContext(SessionContext);
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -91,10 +93,9 @@ const LoginForm = () => {
     event.preventDefault();
     setLoading(true);
     setTimeout(() => {
-      console.log("onSubmit", session);
       setLoading(false);
-      // setToken('1234');
-    }, 3000);
+      session.setToken("1234");
+    }, 500);
   };
 
   return c(
@@ -140,33 +141,81 @@ const LoginForm = () => {
   );
 };
 
-const Page = () => {
-  const loadingElements = [0, 0, 0].map(() =>
+type PostData = {
+  author: string;
+  content: string;
+  avatarColor: string;
+};
+
+const Post = ({ author, content, avatarColor }: PostData) => {
+  return c(
+    "div",
+    { class: "border border-gray-200 rounded-md p-4 mb-4" },
     c(
       "div",
-      {
-        class: "border border-gray-200 rounded-md p-4 mb-4",
-      },
+      { class: "flex space-x-3" },
+      c("div", { class: `rounded-full ${avatarColor} h-12 w-12` }),
       c(
         "div",
-        { class: "animate-pulse flex space-x-4" },
-        c("div", { class: "rounded-full bg-gray-200 h-12 w-12" }),
+        { class: "flex-1 py-1" },
+        c("div", { class: "font-bold text-gray-700" }, author),
+        c("div", { class: "" }, c("div", { class: "text-gray-500" }, content))
+      )
+    )
+  );
+};
+
+const PlaceholderPost = () => {
+  return c(
+    "div",
+    { class: "border border-gray-200 rounded-md p-4 mb-4" },
+    c(
+      "div",
+      { class: "animate-pulse flex space-x-3" },
+      c("div", { class: "rounded-full bg-gray-200 h-12 w-12" }),
+      c(
+        "div",
+        { class: "flex-1 space-y-3 py-1" },
+        c("div", { class: "h-4 bg-gray-200 rounded w-3/4" }),
         c(
           "div",
-          { class: "flex-1 space-y-4 py-1" },
-          c("div", { class: "h-4 bg-gray-200 rounded w-3/4" }),
-          c(
-            "div",
-            { class: "space-y-2" },
-            c("div", { class: "h-4 bg-gray-200 rounded" }),
-            c("div", { class: "h-4 bg-gray-200 rounded w-5/6" })
-          )
+          { class: "space-y-2" },
+          c("div", { class: "h-4 bg-gray-200 rounded" }),
+          c("div", { class: "h-4 bg-gray-200 rounded w-5/6" })
         )
       )
     )
   );
+};
 
-  return c("div", { class: "max-w-sm w-full mx-auto" }, loadingElements);
+const Page = () => {
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<PostData[]>([]);
+
+  useEffect(() => {
+    setTimeout(() => {
+      setData([
+        {
+          author: "tchayen",
+          avatarColor: "bg-blue-400",
+          content: "123",
+        },
+      ]);
+      setLoading(false);
+    }, 500);
+  }, []);
+
+  return c(
+    "div",
+    { class: "max-w-sm w-full mx-auto" },
+    loading
+      ? c("div", {}, c(PlaceholderPost), c(PlaceholderPost), c(PlaceholderPost))
+      : c(
+          "div",
+          {},
+          data.map((post) => c(Post, post))
+        )
+  );
 };
 
 const App = () => {
