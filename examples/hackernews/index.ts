@@ -4,7 +4,7 @@ import {
   render,
   useEffect,
   useState,
-} from "./lib";
+} from "../../lib";
 
 const root = document.getElementById("root");
 
