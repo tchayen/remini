@@ -94,10 +94,11 @@ let _currentNode: RNode | null = null;
 let _hookIndex = 0;
 let _lookingForRef: { current: any } | null = null;
 
+// TODO CONTEXT: fix typings below.
 // Current value coming from closest provider.
-const contextValues: Map<any, any> = new Map();
+const contextValues: Map<Context<any>, any> = new Map();
 
-const contextRegistry: Map<any, RNode[]> = new Map();
+const contextRegistry: Map<Context<any>, RNode[]> = new Map();
 
 const update = (node: RNode, element: RElement) => {
   let previousNode = _currentNode;
@@ -180,6 +181,7 @@ const update = (node: RNode, element: RElement) => {
       };
 
       if (expected.type === SPECIAL_TYPES.PROVIDER) {
+        // TODO CONTEXT: fix type.
         newNode.context = expected.props.context;
       }
 
@@ -234,6 +236,7 @@ const update = (node: RNode, element: RElement) => {
         };
 
         if (expected.type === SPECIAL_TYPES.PROVIDER) {
+          // TODO CONTEXT: fix type.
           newNode.context = expected.props.context;
         }
 
@@ -269,6 +272,9 @@ const update = (node: RNode, element: RElement) => {
         return;
       }
 
+      // TODO CONTEXT:
+      // Remove all mappings context->node pointing to this node.
+
       if (typeof current.type === "string" && "dom" in current) {
         removeDom(current);
       }
@@ -301,8 +307,8 @@ const update = (node: RNode, element: RElement) => {
     }
   });
 
-  if (node.type === SPECIAL_TYPES.PROVIDER) {
-    contextValues.set(replacedContext?.context, replacedContext?.value);
+  if (node.type === SPECIAL_TYPES.PROVIDER && replacedContext !== null) {
+    contextValues.set(replacedContext.context, replacedContext?.value);
   }
 
   _currentNode = previousNode;
@@ -345,6 +351,10 @@ export const useEffect = (
   // Capture the current node.
   let c = _currentNode;
   let i = _hookIndex;
+
+  if (!c || !("hooks" in c) || !c.hooks) {
+    throw new Error("Executing useEffect for non-function element.");
+  }
 
   effects.push(() => {
     if (!c || !("hooks" in c) || !c.hooks) {
@@ -402,8 +412,8 @@ export const useState = <T>(
     }
 
     // https://github.com/microsoft/TypeScript/issues/37663#issuecomment-856866935
-    // This typing is not going to work if next comes from different iframe,
-    // window, realm.
+    // In case of a different iframe, window or realm, next won't be instance
+    // of the same Function and will be saved instead of treated as callback.
     if (next instanceof Function) {
       hook.state = next(hook.state);
     } else {
@@ -462,7 +472,9 @@ type Context<T> = {
 };
 
 export const createContext = <T>(): Context<T> => {
-  const context: Partial<Context<T>> = {};
+  // TODO CONTEXT: proper typing for this.
+  // @ts-ignore
+  const context: Context<T> = {};
 
   const Provider = <T>({ children, value }: ProviderProps<T>): RElement => {
     useEffect(() => {
@@ -484,7 +496,7 @@ export const createContext = <T>(): Context<T> => {
   };
 
   context.Provider = Provider;
-  return context as Context<T>;
+  return context;
 };
 
 export const useContext = <T>(context: Context<T>): T => {

@@ -434,6 +434,18 @@ describe("useEffect", () => {
     expect(mock).toHaveBeenCalledTimes(1);
     expect(document.body.innerHTML).toBe("<div><div></div></div>");
   });
+
+  xit("works with two different effects in a component", () => {
+    // TODO
+  });
+
+  it("does not work outside component", () => {
+    expect(() => {
+      useEffect(() => {
+        console.log();
+      }, []);
+    }).toThrowError("Executing useEffect for non-function element.");
+  });
 });
 
 describe("useRef", () => {
@@ -754,11 +766,11 @@ describe("DOM", () => {
     expect(value.innerHTML).toBe("1");
   });
 
-  it("has text nodes updated", () => {
+  xit("has text nodes updated", () => {
     // TODO
   });
 
-  it("has text nodes removed", () => {
+  xit("has text nodes removed", () => {
     // TODO
   });
 });
