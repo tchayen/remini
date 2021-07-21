@@ -202,6 +202,7 @@ const update = (node: RNode, element: RElement) => {
       update(current, expected);
     } else if (current && expected && current.type !== expected.type) {
       // REPLACE
+      console.log("REPLACE", current, expected);
       let newNode: RNode;
 
       if (expected.type === SPECIAL_TYPES.PROVIDER) {
@@ -221,16 +222,18 @@ const update = (node: RNode, element: RElement) => {
         };
 
         if (typeof expected.type === "string") {
-          if ("dom" in current) {
-            removeDom(current);
-          }
-
           const firstParentWithDom = findClosestDom(node);
           if (!firstParentWithDom.dom) {
             throw new Error("Missing DOM.");
           }
 
-          insertDom(firstParentWithDom.dom, newNode, expected);
+          console.log("moi", current, expected);
+          insertDom(
+            firstParentWithDom.dom,
+            newNode,
+            expected,
+            "dom" in current
+          );
         }
 
         if (typeof expected.type === "function") {

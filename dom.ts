@@ -38,7 +38,12 @@ const createElement = (type: string) => {
   }
 };
 
-export const insertDom = (parent: Node, node: RNode, element: RElement) => {
+export const insertDom = (
+  parent: Node,
+  node: RNode,
+  element: RElement,
+  replace?: boolean
+) => {
   if (
     node.type === null ||
     element === null ||
@@ -66,7 +71,12 @@ export const insertDom = (parent: Node, node: RNode, element: RElement) => {
     }
   });
 
-  parent.appendChild(html);
+  if (replace) {
+    console.log(parent, node, html);
+    parent.replaceChild(html, node.dom);
+  } else {
+    parent.appendChild(html);
+  }
   node.dom = html;
 
   if (typeof element.props.children === "string") {
