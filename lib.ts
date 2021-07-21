@@ -1,7 +1,9 @@
 import { findClosestDom, insertDom, removeDom, updateDom } from "./dom";
 
+type Children = RElement | RElement[] | string;
+
 type ElementProps = {
-  children: RElement[] | string;
+  children: Children;
   [key: string]: any;
 };
 
@@ -12,26 +14,38 @@ type Props = {
 
 export type RenderFunction = (props: Props) => RElement;
 
+export enum SPECIAL_TYPES {
+  PROVIDER = 1,
+}
+
+export type ComponentType = RenderFunction | string | SPECIAL_TYPES;
+
 export type RElement =
   | {
-      type: RenderFunction | string;
+      type: ComponentType;
       props: ElementProps;
     }
   | string
   | null;
 
 export type RNodeReal = {
-  type: RenderFunction | string;
+  type: ComponentType;
   props: ElementProps;
   parent: RNode | null;
   descendants: RNode[];
   dom?: Node;
   hooks?: any[];
-  name?: string;
 };
 
 export type RNode =
   | RNodeReal
+  | {
+      type: SPECIAL_TYPES.PROVIDER;
+      props: ElementProps;
+      parent: RNode | null;
+      context: Context<any>;
+      descendants: RNode[];
+    }
   | {
       type: null;
       parent: RNode | null;
@@ -39,25 +53,25 @@ export type RNode =
     };
 
 export function createElement(
-  component: RenderFunction | string,
+  component: ComponentType,
   props: Props,
-  children: RElement[]
+  children: Children
 ): RElement;
 
 export function createElement(
-  component: RenderFunction | string,
+  component: ComponentType,
   props?: Props,
   ...children: RElement[]
 ): RElement;
 
 export function createElement(
-  component: RenderFunction | string,
+  component: ComponentType,
   props?: Props,
   children?: string
 ): RElement;
 
 export function createElement(
-  component: RenderFunction | string,
+  component: ComponentType,
   props: Props,
   ...children: any
 ): RElement {
@@ -76,21 +90,20 @@ export function createElement(
   };
 }
 
-const getName = (type: RenderFunction | string) => {
-  if (typeof type === "string") {
-    return type;
-  } else {
-    return type.name;
-  }
-};
-
 let _currentNode: RNode | null = null;
 let _hookIndex = 0;
 let _lookingForRef: { current: any } | null = null;
 
+// Current value coming from closest provider.
+const contextValues: Map<any, any> = new Map();
+
+const contextRegistry: Map<any, RNode[]> = new Map();
+
 const update = (node: RNode, element: RElement) => {
   let previousNode = _currentNode;
   let previousIndex = _hookIndex;
+
+  let replacedContext = null;
 
   if (typeof element === "string") {
     // TODO
@@ -108,10 +121,20 @@ const update = (node: RNode, element: RElement) => {
     _hookIndex = 0;
   } else if (element === null) {
     // Empty node?
-  } else if (typeof element.type === "string") {
+  } else if (
+    typeof node.type === "string" ||
+    node.type === SPECIAL_TYPES.PROVIDER
+  ) {
+    if ("context" in node) {
+      const currentValue = contextValues.get(node.context);
+      replacedContext = { context: node.context, value: currentValue };
+      contextValues.set(node.context, node.props.value);
+    }
+
     const { children } = element.props;
-    if (typeof children !== "string") {
-      elements = children;
+    if (children === null) {
+    } else if (typeof children !== "string") {
+      elements = Array.isArray(children) ? children : [children];
     } else {
       // TODO
       // This is when children array is a single string.
@@ -134,6 +157,11 @@ const update = (node: RNode, element: RElement) => {
       return;
     }
 
+    if (expected === undefined) {
+      // This is when children was undefined.
+      return;
+    }
+
     if (current && expected && current.type === expected.type) {
       // UPDATE
       if (typeof current.type === "string") {
@@ -147,13 +175,16 @@ const update = (node: RNode, element: RElement) => {
       let newNode: RNode = {
         props: expected.props,
         type: expected.type,
-        name: getName(expected.type),
         parent: node,
         descendants: [],
       };
 
+      if (expected.type === SPECIAL_TYPES.PROVIDER) {
+        newNode.context = expected.props.context;
+      }
+
       if (typeof expected.type === "string") {
-        if (current.type !== null && current.dom) {
+        if ("dom" in current) {
           removeDom(current);
         }
 
@@ -169,12 +200,8 @@ const update = (node: RNode, element: RElement) => {
         newNode.hooks = [];
       }
 
-      if (
-        typeof current.type === "function" &&
-        current.type !== null &&
-        current.hooks
-      ) {
-        current.hooks.forEach((hook) => {
+      if (typeof current.type === "function" && "hooks" in current) {
+        current.hooks?.forEach((hook) => {
           if (hook.cleanup) {
             hook.cleanup();
           }
@@ -182,7 +209,7 @@ const update = (node: RNode, element: RElement) => {
 
         const child = current.descendants[0];
 
-        if (child && child.type !== null && child.dom) {
+        if ("dom" in child) {
           removeDom(findClosestDom(child));
         }
       }
@@ -202,10 +229,13 @@ const update = (node: RNode, element: RElement) => {
         newNode = {
           props: expected.props,
           type: expected.type,
-          name: getName(expected.type),
           parent: node,
           descendants: [],
         };
+
+        if (expected.type === SPECIAL_TYPES.PROVIDER) {
+          newNode.context = expected.props.context;
+        }
 
         if (typeof expected.type === "string") {
           const firstParentWithDom = findClosestDom(node);
@@ -239,12 +269,12 @@ const update = (node: RNode, element: RElement) => {
         return;
       }
 
-      if (typeof current.type === "string" && current.dom) {
+      if (typeof current.type === "string" && "dom" in current) {
         removeDom(current);
       }
 
-      if (typeof current.type === "function" && current.hooks) {
-        current.hooks.forEach((hook) => {
+      if (typeof current.type === "function" && "hooks" in current) {
+        current.hooks?.forEach((hook) => {
           if (hook.cleanup) {
             hook.cleanup();
           }
@@ -252,7 +282,7 @@ const update = (node: RNode, element: RElement) => {
 
         const child = current.descendants[0];
 
-        if (child && child.type !== null && child.dom) {
+        if (child && "dom" in child) {
           removeDom(findClosestDom(child));
         }
       }
@@ -270,6 +300,10 @@ const update = (node: RNode, element: RElement) => {
       }
     }
   });
+
+  if (node.type === SPECIAL_TYPES.PROVIDER) {
+    contextValues.set(replacedContext?.context, replacedContext?.value);
+  }
 
   _currentNode = previousNode;
   _hookIndex = previousIndex;
@@ -290,9 +324,11 @@ const runUpdateLoop = (node: RNode, element: RElement) => {
   updating = true;
 
   let current: Job | undefined;
+  // Run all state updates.
   while ((current = tasks.shift())) {
     update(current.node, current.element);
 
+    // Run all effects queued for this update.
     let effect: (() => void) | undefined;
     while ((effect = effects.shift())) {
       effect();
@@ -311,7 +347,7 @@ export const useEffect = (
   let i = _hookIndex;
 
   effects.push(() => {
-    if (!c || c.type === null || !c.hooks) {
+    if (!c || !("hooks" in c) || !c.hooks) {
       throw new Error("Executing useState for non-function element.");
     }
 
@@ -350,7 +386,7 @@ export const useState = <T>(
   let c = _currentNode;
   let i = _hookIndex;
 
-  if (!c || c.type === null || !c.hooks) {
+  if (!c || c.type === null || c.type === SPECIAL_TYPES.PROVIDER || !c.hooks) {
     throw new Error("Executing useState for non-function element.");
   }
 
@@ -361,7 +397,7 @@ export const useState = <T>(
   const hook = c.hooks[i];
 
   const setState = (next: T | ((current: T) => T)) => {
-    if (!c || c.type === null || !c.hooks) {
+    if (!c || !("hooks" in c) || !c.hooks) {
       throw new Error("Executing useState for non-function element.");
     }
 
@@ -392,7 +428,7 @@ export const useRef = <T>(): { current: T | null } => {
 };
 
 export const useMemo = <T>(callback: () => T, dependencies: any[]): T => {
-  if (!_currentNode || _currentNode.type === null || !_currentNode.hooks) {
+  if (!_currentNode || !("hooks" in _currentNode) || !_currentNode.hooks) {
     throw new Error("Can't call useMemo on this node.");
   }
 
@@ -415,6 +451,44 @@ export const useMemo = <T>(callback: () => T, dependencies: any[]): T => {
   _hookIndex += 1;
 
   return _currentNode.hooks[_hookIndex - 1].memo;
+};
+
+type ProviderProps<T> = { value: T; children: Children };
+
+type Context<T> = {
+  Provider: ({ value, children }: ProviderProps<T>) => RElement;
+};
+
+export const createContext = <T>(defaultValue: T): Context<T> => {
+  const context: any = { value: defaultValue };
+
+  const Provider = <T>({ children, value }: ProviderProps<T>): RElement => {
+    useEffect(() => {
+      contextRegistry.set(context, []);
+    }, []);
+
+    useEffect(() => {
+      // Value changed, update it and rerender all subscribed nodes.
+      const nodes = contextRegistry.get(context) || [];
+      nodes.forEach((node) => {
+        update(node, null);
+      });
+    }, [value]);
+
+    return {
+      type: SPECIAL_TYPES.PROVIDER,
+      props: { value, children, context },
+    };
+  };
+
+  context.Provider = Provider;
+  return context;
+};
+
+export const useContext = <T>(context: Context<T>): T => {
+  // Return whatever value is. Undefined or null might be intentional and can
+  // make a difference.
+  return contextValues.get(context);
 };
 
 export let _rootNode: RNode | null = null;

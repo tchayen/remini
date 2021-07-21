@@ -1,6 +1,8 @@
 import {
+  createContext,
   createElement as c,
   render,
+  useContext,
   useEffect,
   useMemo,
   useRef,
@@ -527,6 +529,126 @@ describe("useMemo", () => {
 
     jest.advanceTimersByTime(501);
     expect(mock).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("Context API", () => {
+  it("works", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    type Session = { username: string } | null;
+    const SessionContext = createContext<Session>(null);
+
+    const User = () => {
+      const session = useContext(SessionContext);
+
+      return c("div", {}, session ? session.username : "Anonymous");
+    };
+
+    const Sidebar = () => {
+      return c(User);
+    };
+
+    const App = () => {
+      const [session, setSession] = useState<Session>(null);
+
+      useEffect(() => {
+        setTimeout(() => {
+          setSession({ username: "John" });
+        }, 1000);
+      }, []);
+
+      return c(SessionContext.Provider, { value: session }, c(Sidebar));
+    };
+
+    const tree = c(App);
+    render(tree, root);
+
+    expect(document.body.innerHTML).toBe("<div><div>Anonymous</div></div>");
+
+    jest.runOnlyPendingTimers();
+    expect(document.body.innerHTML).toBe("<div><div>John</div></div>");
+  });
+
+  it("works with different contexts", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    type Theme = "light" | "dark";
+    const ThemeContext = createContext<Theme>("light");
+
+    type Session = { username: string } | null;
+    const SessionContext = createContext<Session>({ username: "Alice" });
+
+    const User = () => {
+      const theme = useContext(ThemeContext);
+      const session = useContext(SessionContext);
+
+      return c(
+        "div",
+        { style: { backgroundColor: theme === "light" ? "#fff" : "#000" } },
+        session ? session.username : "Anonymous"
+      );
+    };
+
+    const Sidebar = () => {
+      return c(User);
+    };
+
+    const App = () => {
+      const [session] = useState<Session>({ username: "Alice" });
+
+      return c(
+        ThemeContext.Provider,
+        { value: "light" },
+        c(SessionContext.Provider, { value: session }, c(Sidebar))
+      );
+    };
+
+    const tree = c(App);
+    render(tree, root);
+
+    expect(document.body.innerHTML).toBe(
+      '<div><div style="background-color:#fff">Alice</div></div>'
+    );
+  });
+
+  it("works with nested providers with different values", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    // P(1)
+    // |
+    // A
+    // |\
+    // B P(2)
+    //   |
+    //   B
+    //
+    // P(x) - provider with x as the value.
+
+    const Context = createContext(undefined);
+
+    const B = () => {
+      const context = useContext(Context);
+      return c("div", {}, `${context}`);
+    };
+
+    const A = () => {
+      return c("div", {}, c(B), c(Context.Provider, { value: 2 }, c(B)));
+    };
+
+    const App = () => {
+      return c("div", {}, c(Context.Provider, { value: 1 }, c(A)));
+    };
+
+    const tree = c(App);
+    render(tree, root);
+
+    expect(document.body.innerHTML).toBe(
+      "<div><div><div><div>1</div><div>2</div></div></div></div>"
+    );
   });
 });
 

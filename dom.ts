@@ -1,4 +1,4 @@
-import { RElement, RNode, RNodeReal } from "./lib";
+import { RElement, RNode, RNodeReal, SPECIAL_TYPES } from "./lib";
 
 const isEvent = (key: string) => !!key.match(new RegExp("on[A-Z].*"));
 const eventToKeyword = (key: string) => key.replace("on", "").toLowerCase();
@@ -21,6 +21,8 @@ export const insertDom = (parent: Node, node: RNode, element: RElement) => {
     node.type === null ||
     element === null ||
     typeof element === "string" ||
+    node.type === SPECIAL_TYPES.PROVIDER ||
+    element.type === SPECIAL_TYPES.PROVIDER ||
     typeof element.type === "function"
   ) {
     throw new Error("This is not supposed to happen.");
@@ -52,11 +54,15 @@ export const insertDom = (parent: Node, node: RNode, element: RElement) => {
 
 // Update two DOM nodes of the same HTML tag.
 export const updateDom = (current: RNode, expected: RElement) => {
-  if (expected === null || typeof expected == "string") {
+  if (
+    expected === null ||
+    typeof expected == "string" ||
+    expected.type === SPECIAL_TYPES.PROVIDER
+  ) {
     throw new Error("No!");
   }
 
-  if (current.type === null) {
+  if (current.type === null || current.type === SPECIAL_TYPES.PROVIDER) {
     throw new Error("Cannot update null node.");
   }
 
@@ -140,7 +146,11 @@ export const updateDom = (current: RNode, expected: RElement) => {
 };
 
 export const removeDom = (node: RNode) => {
-  if (node.type === null || node.dom === undefined) {
+  if (
+    node.type === null ||
+    node.type === SPECIAL_TYPES.PROVIDER ||
+    node.dom === undefined
+  ) {
     throw new Error("Tried to remove incorrect node.");
   }
 
@@ -150,12 +160,20 @@ export const removeDom = (node: RNode) => {
 export const findClosestDom = (node: RNode): RNodeReal => {
   let current = node;
 
-  while (current.type !== null && !current.dom && current.parent) {
+  while (
+    current.type !== null &&
+    (current.type === SPECIAL_TYPES.PROVIDER || !current.dom) && // TODO CONTEXT: this might be breaking.
+    current.parent
+  ) {
     current = current.parent;
   }
 
   if (current.type === null) {
     throw new Error("Parent node was null.");
+  }
+
+  if (current.type === SPECIAL_TYPES.PROVIDER) {
+    throw new Error("Node is a provider.");
   }
 
   if (current.dom === undefined) {
