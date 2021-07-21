@@ -34,13 +34,37 @@ export type RElement =
   | string
   | null;
 
+export type Hook =
+  | {
+      type: "state";
+      state: any;
+    }
+  | {
+      type: "effect";
+      cleanup: (() => void) | undefined;
+      dependencies?: any[];
+    }
+  | {
+      type: "ref";
+      current: any;
+    }
+  | {
+      type: "context";
+      context: any;
+    }
+  | {
+      type: "memo";
+      memo: any;
+      dependencies?: any[];
+    };
+
 export type RNodeReal = {
   type: RenderFunction | string;
   props: ElementProps;
   parent: RNode | null;
   descendants: RNode[];
   dom?: Node;
-  hooks?: any[];
+  hooks?: Hook[];
 };
 
 export type RNode =
@@ -212,7 +236,7 @@ const update = (node: RNode, element: RElement) => {
 
       if (typeof current.type === "function" && "hooks" in current) {
         current.hooks?.forEach((hook) => {
-          if (hook.cleanup) {
+          if (hook.type === "effect" && hook.cleanup) {
             hook.cleanup();
           }
         });
@@ -267,7 +291,7 @@ const update = (node: RNode, element: RElement) => {
               closestComponent.hooks
             ) {
               for (const hook of closestComponent.hooks) {
-                if ("current" in hook && expected.props.ref === hook) {
+                if (hook.type === "ref" && expected.props.ref === hook) {
                   hook.current = newNode.dom;
                 }
               }
@@ -296,7 +320,7 @@ const update = (node: RNode, element: RElement) => {
 
       if (typeof current.type === "function" && "hooks" in current) {
         current.hooks?.forEach((hook) => {
-          if (hook.cleanup) {
+          if (hook.type === "effect" && hook.cleanup) {
             hook.cleanup();
           }
         });
@@ -378,26 +402,41 @@ export const useEffect = (
 
     if (c.hooks[i] === undefined) {
       // INITIALIZE
-      c.hooks[i] = { dependencies };
+      const hook: Hook = { type: "effect", cleanup: undefined, dependencies };
+      c.hooks[i] = hook;
       const cleanup = callback();
-      c.hooks[i].cleanup = cleanup;
+      hook.cleanup = cleanup ? cleanup : undefined;
     } else if (dependencies) {
       // COMPARE DEPENDENCIES
+
+      const hook = c.hooks[i];
+      if (hook.type !== "effect" || hook.dependencies === undefined) {
+        throw new Error("Something went wrong");
+      }
+
       let shouldRun = false;
       for (let j = 0; j < dependencies.length; j++) {
-        if (dependencies[j] !== c.hooks[i].dependencies[j]) {
+        if (dependencies[j] !== hook.dependencies[j]) {
           shouldRun = true;
         }
       }
 
       if (shouldRun) {
         const cleanup = callback();
-        c.hooks[i] = { cleanup, dependencies };
+        c.hooks[i] = {
+          type: "effect",
+          cleanup: cleanup ? cleanup : undefined,
+          dependencies,
+        };
       }
     } else if (!dependencies) {
       // RUN ALWAYS
       const cleanup = callback();
-      c.hooks[i] = { cleanup, dependencies };
+      c.hooks[i] = {
+        type: "effect",
+        cleanup: cleanup ? cleanup : undefined,
+        dependencies,
+      };
     }
   });
 
@@ -416,10 +455,14 @@ export const useState = <T>(
   }
 
   if (c.hooks[i] === undefined) {
-    c.hooks[i] = { state: initial };
+    c.hooks[i] = { type: "state", state: initial };
   }
 
   const hook = c.hooks[i];
+
+  if (hook.type !== "state") {
+    throw new Error("Something went very wrong.");
+  }
 
   const setState = (next: T | ((current: T) => T)) => {
     if (!c || !("hooks" in c) || !c.hooks) {
@@ -453,7 +496,11 @@ export const useRef = <T>(): { current: T | null } => {
     throw new Error("Can't use useRef on this node.");
   }
 
-  const ref = { current: null };
+  const ref: Hook = { type: "ref", current: null };
+
+  if (ref.type !== "ref") {
+    throw new Error("Something went wrong.");
+  }
 
   _currentNode.hooks[_hookIndex] = ref;
 
@@ -468,24 +515,38 @@ export const useMemo = <T>(callback: () => T, dependencies: any[]): T => {
   }
 
   if (_currentNode.hooks[_hookIndex] === undefined) {
-    _currentNode.hooks[_hookIndex] = { memo: callback(), dependencies };
+    _currentNode.hooks[_hookIndex] = {
+      type: "memo",
+      memo: callback(),
+      dependencies,
+    };
   } else {
+    const hook = _currentNode.hooks[_hookIndex];
+    if (hook.type !== "memo" || !hook.dependencies) {
+      throw new Error("Something went wrong");
+    }
+
     let shouldRun = false;
     for (let j = 0; j < dependencies.length; j++) {
-      if (dependencies[j] !== _currentNode.hooks[_hookIndex].dependencies[j]) {
+      if (dependencies[j] !== hook.dependencies[j]) {
         shouldRun = true;
       }
     }
 
     if (shouldRun) {
       const memo = callback();
-      _currentNode.hooks[_hookIndex] = { memo, dependencies };
+      _currentNode.hooks[_hookIndex] = { type: "memo", memo, dependencies };
     }
   }
 
   _hookIndex += 1;
 
-  return _currentNode.hooks[_hookIndex - 1].memo;
+  const hook = _currentNode.hooks[_hookIndex - 1];
+  if (hook.type !== "memo") {
+    throw new Error("Something went wrong");
+  }
+
+  return hook.memo;
 };
 
 type ProviderProps<T> = { value: T; children: Children };
@@ -512,6 +573,17 @@ export const createContext = <T>(): Context<T> => {
 export const useContext = <T>(context: Context<T>): T => {
   // Return whatever value is. Undefined or null might be intentional and can
   // make a difference.
+
+  if (!_currentNode || !("hooks" in _currentNode) || !_currentNode.hooks) {
+    throw new Error("Can't call useContext on this node.");
+  }
+
+  _currentNode.hooks[_hookIndex] = {
+    type: "context",
+    context: contextValues.get(context),
+  };
+  _hookIndex += 1;
+
   return contextValues.get(context);
 };
 
