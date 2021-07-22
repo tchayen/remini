@@ -406,7 +406,7 @@ export const useEffect = (
       // COMPARE DEPENDENCIES
       const hook = c.hooks[i];
       if (hook.type !== "effect" || hook.dependencies === undefined) {
-        throw new Error("Something went wrong");
+        throw new Error("Something went wrong.");
       }
 
       let shouldRun = false;
@@ -456,7 +456,7 @@ export const useState = <T>(
   const hook = c.hooks[i];
 
   if (hook.type !== "state") {
-    throw new Error("Something went very wrong.");
+    throw new Error("Something went wrong.");
   }
 
   const setState = (next: T | ((current: T) => T)) => {
@@ -518,7 +518,7 @@ export const useMemo = <T>(callback: () => T, dependencies: any[]): T => {
   } else {
     const hook = _currentNode.hooks[_hookIndex];
     if (hook.type !== "memo" || !hook.dependencies) {
-      throw new Error("Something went wrong");
+      throw new Error("Something went wrong.");
     }
 
     let shouldRun = false;
@@ -538,7 +538,7 @@ export const useMemo = <T>(callback: () => T, dependencies: any[]): T => {
 
   const hook = _currentNode.hooks[_hookIndex - 1];
   if (hook.type !== "memo") {
-    throw new Error("Something went wrong");
+    throw new Error("Something went wrong.");
   }
 
   return hook.memo;
@@ -581,9 +581,14 @@ export const useContext = <T>(context: Context<T>): T => {
     };
   }
 
-  _hookIndex += 1;
+  const hook = _currentNode.hooks[_hookIndex];
 
-  return _currentNode.hooks[_hookIndex - 1].context;
+  if (hook.type !== "context") {
+    throw new Error("Something went wrong.");
+  }
+
+  _hookIndex += 1;
+  return hook.context;
 };
 
 export let _rootNode: RNode | null = null;
