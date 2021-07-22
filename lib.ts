@@ -24,11 +24,11 @@ export enum SPECIAL_TYPES {
   PROVIDER = 1,
 }
 
-export type ComponentType = RenderFunction | string;
+export type ComponentType = RenderFunction | SPECIAL_TYPES | string;
 
 export type RElement =
   | {
-      type: ComponentType | SPECIAL_TYPES;
+      type: ComponentType;
       props: ElementProps;
     }
   | string
