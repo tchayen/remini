@@ -196,9 +196,14 @@ const Page = () => {
     setTimeout(() => {
       setData([
         {
-          author: "tchayen",
+          author: "tchayen1",
           avatarColor: "bg-blue-400",
           content: "123",
+        },
+        {
+          author: "test",
+          avatarColor: "bg-green-400",
+          content: "Hello",
         },
       ]);
       setLoading(false);

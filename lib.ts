@@ -187,11 +187,6 @@ const update = (node: RNode, element: RElement) => {
       return;
     }
 
-    if (expected === undefined) {
-      // This is when children was undefined.
-      return;
-    }
-
     if (current && expected && current.type === expected.type) {
       // UPDATE
       if (typeof current.type === "string") {
@@ -202,9 +197,7 @@ const update = (node: RNode, element: RElement) => {
       update(current, expected);
     } else if (current && expected && current.type !== expected.type) {
       // REPLACE
-      console.log("REPLACE", current, expected);
       let newNode: RNode;
-
       if (expected.type === SPECIAL_TYPES.PROVIDER) {
         newNode = {
           context: expected.props.context,
@@ -227,13 +220,7 @@ const update = (node: RNode, element: RElement) => {
             throw new Error("Missing DOM.");
           }
 
-          console.log("moi", current, expected);
-          insertDom(
-            firstParentWithDom.dom,
-            newNode,
-            expected,
-            "dom" in current
-          );
+          insertDom(firstParentWithDom.dom, newNode, expected);
         }
 
         if (typeof expected.type === "function") {
@@ -248,10 +235,10 @@ const update = (node: RNode, element: RElement) => {
           }
         });
 
-        const child = current.descendants[0];
-
-        if ("dom" in child) {
-          removeDom(findClosestDom(child));
+        for (const child of current.descendants) {
+          if ("dom" in child) {
+            removeDom(findClosestDom(child));
+          }
         }
       }
 
