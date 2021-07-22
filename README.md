@@ -29,10 +29,11 @@ render(c(Counter), document.getElementById("root"));
 
 ## Might come later
 - [x] Accepting `style` object as alternative to string prop
-- [ ] Updater version of `setState`
-- [ ] `ref`s
-- [ ] Context API
+- [x] Updater version of `setState`
+- [x] `ref`s
+- [x] Context API
 - [ ] `<Fragment />`
+- [ ] SSR
 
 ## Useful reading
 
@@ -40,6 +41,8 @@ render(c(Counter), document.getElementById("root"));
 
 [React as a UI Runtime
 ](https://overreacted.io/react-as-a-ui-runtime/)
+
+[A Complete Guide to useEffect](https://overreacted.io/a-complete-guide-to-useeffect)
 
 [How Does setState Know What to Do?
 ](https://overreacted.io/how-does-setstate-know-what-to-do/)
