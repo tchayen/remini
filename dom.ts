@@ -1,8 +1,9 @@
 import {
+  ComponentNode,
+  HostNode,
+  NodeType,
   RElement,
-  RenderFunction,
   RNode,
-  RNodeReal,
   SPECIAL_TYPES,
 } from "./lib";
 
@@ -40,10 +41,9 @@ const createElement = (type: string) => {
 
 export const insertDom = (parent: Node, node: RNode, element: RElement) => {
   if (
-    node.type === null ||
+    node.kind !== NodeType.HOST ||
     element === null ||
     typeof element === "string" ||
-    node.type === SPECIAL_TYPES.PROVIDER ||
     element.type === SPECIAL_TYPES.PROVIDER ||
     typeof element.type === "function"
   ) {
@@ -67,11 +67,12 @@ export const insertDom = (parent: Node, node: RNode, element: RElement) => {
   });
 
   parent.appendChild(html);
-  node.dom = html;
 
   if (typeof element.props.children === "string") {
     html.appendChild(document.createTextNode(element.props.children));
   }
+
+  return html;
 };
 
 // Update two DOM nodes of the same HTML tag.
@@ -84,12 +85,8 @@ export const updateDom = (current: RNode, expected: RElement) => {
     throw new Error("No!");
   }
 
-  if (current.type === null || current.type === SPECIAL_TYPES.PROVIDER) {
-    throw new Error("Cannot update null node.");
-  }
-
-  if (!current.dom) {
-    throw new Error("Tried updating DOM of a node without DOM representation.");
+  if (current.kind !== NodeType.HOST) {
+    throw new Error("Cannot update non-host node.");
   }
 
   const html = current.dom as HTMLElement;
@@ -168,60 +165,43 @@ export const updateDom = (current: RNode, expected: RElement) => {
 };
 
 export const removeDom = (node: RNode) => {
-  if (
-    node.type === null ||
-    node.type === SPECIAL_TYPES.PROVIDER ||
-    node.dom === undefined
-  ) {
+  if (node.kind !== NodeType.HOST) {
     throw new Error("Tried to remove incorrect node.");
   }
 
   node.dom.parentNode?.removeChild(node.dom);
 };
 
-export const findClosestDom = (node: RNode): RNodeReal => {
+export const findClosestDom = (node: RNode): HostNode => {
   let current = node;
 
   while (
     current.type !== null &&
-    (current.type === SPECIAL_TYPES.PROVIDER || !current.dom) && // TODO CONTEXT: this might be breaking.
+    current.kind !== NodeType.HOST &&
     current.parent
   ) {
     current = current.parent;
   }
 
-  if (current.type === null) {
-    throw new Error("Parent node was null.");
-  }
-
-  if (current.type === SPECIAL_TYPES.PROVIDER) {
-    throw new Error("Node is a provider.");
-  }
-
-  if (current.dom === undefined) {
-    throw new Error("Node is missing DOM.");
+  if (current.kind !== NodeType.HOST) {
+    throw new Error("Couldn't find node.");
   }
 
   return current;
 };
 
-export const findClosestComponent = (node: RNode): RNodeReal | null => {
+export const findClosestComponent = (node: RNode): ComponentNode | null => {
   let current = node;
 
   while (
     current.type !== null &&
     current.parent &&
-    "dom" in current &&
-    current.dom
+    current.kind === NodeType.HOST
   ) {
     current = current.parent;
   }
 
-  if (current.type === null) {
-    return null;
-  }
-
-  if (current.type === SPECIAL_TYPES.PROVIDER) {
+  if (current.kind !== NodeType.COMPONENT) {
     return null;
   }
 

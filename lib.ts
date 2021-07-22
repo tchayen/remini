@@ -34,53 +34,80 @@ export type RElement =
   | string
   | null;
 
+enum HookType {
+  STATE = 1,
+  EFFECT = 2,
+  REF = 3,
+  CONTEXT = 4,
+  MEMO = 5,
+}
+
 export type Hook =
   | {
-      type: "state";
+      type: HookType.STATE;
       state: any;
     }
   | {
-      type: "effect";
+      type: HookType.EFFECT;
       cleanup: (() => void) | undefined;
       dependencies?: any[];
     }
   | {
-      type: "ref";
+      type: HookType.REF;
       current: any;
     }
   | {
-      type: "context";
+      type: HookType.CONTEXT;
       context: any;
     }
   | {
-      type: "memo";
+      type: HookType.MEMO;
       memo: any;
       dependencies?: any[];
     };
 
-export type RNodeReal = {
-  type: RenderFunction | string;
+export enum NodeType {
+  COMPONENT = 1,
+  HOST = 2,
+  PROVIDER = 3,
+  NULL = 4,
+}
+
+export type ComponentNode = {
+  kind: NodeType.COMPONENT;
+  type: RenderFunction;
   props: ElementProps;
   parent: RNode | null;
   descendants: RNode[];
-  dom?: Node;
-  hooks?: Hook[];
+  hooks: Hook[];
 };
 
-export type RNode =
-  | RNodeReal
-  | {
-      type: SPECIAL_TYPES.PROVIDER;
-      props: ElementProps;
-      parent: RNode | null;
-      context: Context<any>;
-      descendants: RNode[];
-    }
-  | {
-      type: null;
-      parent: RNode | null;
-      descendants: RNode[];
-    };
+export type HostNode = {
+  kind: NodeType.HOST;
+  type: string;
+  props: ElementProps;
+  parent: RNode | null;
+  descendants: RNode[];
+  dom: Node;
+};
+
+export type ProviderNode = {
+  kind: NodeType.PROVIDER;
+  type: SPECIAL_TYPES.PROVIDER;
+  props: ElementProps;
+  parent: RNode | null;
+  context: Context<any>;
+  descendants: RNode[];
+};
+
+export type NullNode = {
+  kind: NodeType.NULL;
+  type: null;
+  parent: RNode | null;
+  descendants: RNode[];
+};
+
+export type RNode = ComponentNode | HostNode | ProviderNode | NullNode;
 
 export function createElement(
   component: ComponentType,
@@ -138,7 +165,7 @@ const update = (node: RNode, element: RElement) => {
   }
 
   let elements: RElement[] = [];
-  if (typeof node.type === "function" && node.type !== null) {
+  if (node.kind === NodeType.COMPONENT) {
     _currentNode = node;
     _hookIndex = 0;
     // This will be always one element array because this implementation doesn't
@@ -147,11 +174,8 @@ const update = (node: RNode, element: RElement) => {
     _hookIndex = 0;
   } else if (element === null) {
     // Empty node?
-  } else if (
-    typeof node.type === "string" ||
-    node.type === SPECIAL_TYPES.PROVIDER
-  ) {
-    if (node.type === SPECIAL_TYPES.PROVIDER) {
+  } else if (node.kind === NodeType.HOST || node.kind === NodeType.PROVIDER) {
+    if (node.kind === NodeType.PROVIDER) {
       const currentValue = contextValues.get(node.context);
 
       if (currentValue) {
@@ -200,43 +224,55 @@ const update = (node: RNode, element: RElement) => {
       let newNode: RNode;
       if (expected.type === SPECIAL_TYPES.PROVIDER) {
         newNode = {
+          kind: NodeType.PROVIDER,
           context: expected.props.context,
           props: expected.props,
           type: expected.type,
           parent: node,
           descendants: [],
         };
-      } else {
-        newNode = {
+      } else if (typeof expected.type === "string") {
+        const firstParentWithDom = findClosestDom(node);
+        if (!firstParentWithDom.dom) {
+          throw new Error("Missing DOM.");
+        }
+
+        let nodeConstruction: any = {
+          kind: NodeType.HOST,
           props: expected.props,
           type: expected.type,
           parent: node,
           descendants: [],
         };
+        nodeConstruction.dom = insertDom(
+          firstParentWithDom.dom,
+          nodeConstruction,
+          expected
+        );
 
-        if (typeof expected.type === "string") {
-          const firstParentWithDom = findClosestDom(node);
-          if (!firstParentWithDom.dom) {
-            throw new Error("Missing DOM.");
-          }
-
-          insertDom(firstParentWithDom.dom, newNode, expected);
-        }
-
-        if (typeof expected.type === "function") {
-          newNode.hooks = [];
-        }
+        newNode = nodeConstruction;
+      } else if (typeof expected.type === "function") {
+        newNode = {
+          kind: NodeType.COMPONENT,
+          props: expected.props,
+          type: expected.type,
+          parent: node,
+          descendants: [],
+          hooks: [],
+        };
+      } else {
+        throw new Error("Couldn't resolve node kind.");
       }
 
-      if (typeof current.type === "function" && "hooks" in current) {
-        current.hooks?.forEach((hook) => {
-          if (hook.type === "effect" && hook.cleanup) {
+      if (current.kind === NodeType.COMPONENT) {
+        current.hooks.forEach((hook) => {
+          if (hook.type === HookType.EFFECT && hook.cleanup) {
             hook.cleanup();
           }
         });
 
         for (const child of current.descendants) {
-          if ("dom" in child) {
+          if (child.kind === NodeType.HOST) {
             removeDom(findClosestDom(child));
           }
         }
@@ -249,53 +285,60 @@ const update = (node: RNode, element: RElement) => {
       let newNode: RNode;
       if (expected === null) {
         newNode = {
+          kind: NodeType.NULL,
           type: null,
           parent: node,
           descendants: [],
         };
-      } else {
-        if (expected.type === SPECIAL_TYPES.PROVIDER) {
-          newNode = {
-            props: expected.props,
-            type: expected.type,
-            parent: node,
-            descendants: [],
-            context: expected.props.context,
-          };
-        } else {
-          newNode = {
-            props: expected.props,
-            type: expected.type,
-            parent: node,
-            descendants: [],
-          };
-          if (typeof expected.type === "string") {
-            const firstParentWithDom = findClosestDom(node);
-            if (!firstParentWithDom.dom) {
-              throw new Error("Missing DOM.");
+      } else if (expected.type === SPECIAL_TYPES.PROVIDER) {
+        newNode = {
+          kind: NodeType.PROVIDER,
+          props: expected.props,
+          type: expected.type,
+          parent: node,
+          descendants: [],
+          context: expected.props.context,
+        };
+      } else if (typeof expected.type === "string") {
+        let nodeConstruction: any = {
+          kind: NodeType.HOST,
+          props: expected.props,
+          type: expected.type,
+          parent: node,
+          descendants: [],
+        };
+        const firstParentWithDom = findClosestDom(node);
+        if (!firstParentWithDom.dom) {
+          throw new Error("Missing DOM.");
+        }
+
+        nodeConstruction.dom = insertDom(
+          firstParentWithDom.dom,
+          nodeConstruction,
+          expected
+        );
+        newNode = nodeConstruction;
+
+        // Handle useRef.
+        const closestComponent = findClosestComponent(node);
+        if (closestComponent && closestComponent.kind === NodeType.COMPONENT) {
+          for (const hook of closestComponent.hooks) {
+            if (hook.type === HookType.REF && expected.props.ref === hook) {
+              hook.current = (newNode as HostNode).dom;
             }
-
-            insertDom(firstParentWithDom.dom, newNode, expected);
-
-            // Handle useRef.
-            const closestComponent = findClosestComponent(node);
-            if (
-              closestComponent &&
-              "hooks" in closestComponent &&
-              closestComponent.hooks
-            ) {
-              for (const hook of closestComponent.hooks) {
-                if (hook.type === "ref" && expected.props.ref === hook) {
-                  hook.current = newNode.dom;
-                }
-              }
-            }
-          }
-
-          if (typeof expected.type === "function") {
-            newNode.hooks = [];
           }
         }
+      } else if (typeof expected.type === "function") {
+        newNode = {
+          kind: NodeType.COMPONENT,
+          props: expected.props,
+          type: expected.type,
+          parent: node,
+          descendants: [],
+          hooks: [],
+        };
+      } else {
+        throw new Error("Couldn't resolve node kind.");
       }
 
       node.descendants.push(newNode);
@@ -308,26 +351,27 @@ const update = (node: RNode, element: RElement) => {
         return;
       }
 
-      if (typeof current.type === "string" && "dom" in current) {
+      if (current.kind === NodeType.HOST) {
         removeDom(current);
       }
 
-      if (typeof current.type === "function" && "hooks" in current) {
-        current.hooks?.forEach((hook) => {
-          if (hook.type === "effect" && hook.cleanup) {
+      if (current.kind === NodeType.COMPONENT) {
+        current.hooks.forEach((hook) => {
+          if (hook.type === HookType.EFFECT && hook.cleanup) {
             hook.cleanup();
           }
         });
 
         const child = current.descendants[0];
 
-        if (child && "dom" in child) {
+        if (child && child.kind === NodeType.HOST) {
           removeDom(findClosestDom(child));
         }
       }
 
       if (expected === null) {
         const newNode: RNode = {
+          kind: NodeType.NULL,
           type: null,
           parent: node,
           descendants: [],
@@ -387,25 +431,29 @@ export const useEffect = (
   let c = _currentNode;
   let i = _hookIndex;
 
-  if (!c || !("hooks" in c) || !c.hooks) {
+  if (!c || c.kind !== NodeType.COMPONENT) {
     throw new Error("Executing useEffect for non-function element.");
   }
 
   effects.push(() => {
-    if (!c || !("hooks" in c) || !c.hooks) {
+    if (!c || c.kind !== NodeType.COMPONENT) {
       throw new Error("Executing useEffect for non-function element.");
     }
 
     if (c.hooks[i] === undefined) {
       // INITIALIZE
-      const hook: Hook = { type: "effect", cleanup: undefined, dependencies };
+      const hook: Hook = {
+        type: HookType.EFFECT,
+        cleanup: undefined,
+        dependencies,
+      };
       c.hooks[i] = hook;
       const cleanup = callback();
       hook.cleanup = cleanup ? cleanup : undefined;
     } else if (dependencies) {
       // COMPARE DEPENDENCIES
       const hook = c.hooks[i];
-      if (hook.type !== "effect" || hook.dependencies === undefined) {
+      if (hook.type !== HookType.EFFECT || hook.dependencies === undefined) {
         throw new Error("Something went wrong.");
       }
 
@@ -419,7 +467,7 @@ export const useEffect = (
       if (shouldRun) {
         const cleanup = callback();
         c.hooks[i] = {
-          type: "effect",
+          type: HookType.EFFECT,
           cleanup: cleanup ? cleanup : undefined,
           dependencies,
         };
@@ -428,7 +476,7 @@ export const useEffect = (
       // RUN ALWAYS
       const cleanup = callback();
       c.hooks[i] = {
-        type: "effect",
+        type: HookType.EFFECT,
         cleanup: cleanup ? cleanup : undefined,
         dependencies,
       };
@@ -445,22 +493,22 @@ export const useState = <T>(
   let c = _currentNode;
   let i = _hookIndex;
 
-  if (!c || c.type === null || c.type === SPECIAL_TYPES.PROVIDER || !c.hooks) {
+  if (!c || c.kind !== NodeType.COMPONENT) {
     throw new Error("Executing useState for non-function element.");
   }
 
   if (c.hooks[i] === undefined) {
-    c.hooks[i] = { type: "state", state: initial };
+    c.hooks[i] = { type: HookType.STATE, state: initial };
   }
 
   const hook = c.hooks[i];
 
-  if (hook.type !== "state") {
+  if (hook.type !== HookType.STATE) {
     throw new Error("Something went wrong.");
   }
 
   const setState = (next: T | ((current: T) => T)) => {
-    if (!c || !("hooks" in c) || !c.hooks) {
+    if (!c || c.kind !== NodeType.COMPONENT) {
       throw new Error("Executing useState for non-function element.");
     }
 
@@ -482,42 +530,36 @@ export const useState = <T>(
 };
 
 export const useRef = <T>(): { current: T | null } => {
-  if (
-    !_currentNode ||
-    _currentNode.type === null ||
-    !("hooks" in _currentNode) ||
-    !_currentNode.hooks
-  ) {
+  if (!_currentNode || _currentNode.kind !== NodeType.COMPONENT) {
     throw new Error("Can't use useRef on this node.");
   }
 
-  const ref: Hook = { type: "ref", current: null };
+  const ref: Hook = { type: HookType.REF, current: null };
 
-  if (ref.type !== "ref") {
+  if (ref.type !== HookType.REF) {
     throw new Error("Something went wrong.");
   }
 
   _currentNode.hooks[_hookIndex] = ref;
-
   _hookIndex += 1;
 
   return ref;
 };
 
 export const useMemo = <T>(callback: () => T, dependencies: any[]): T => {
-  if (!_currentNode || !("hooks" in _currentNode) || !_currentNode.hooks) {
+  if (!_currentNode || _currentNode.kind !== NodeType.COMPONENT) {
     throw new Error("Can't call useMemo on this node.");
   }
 
   if (_currentNode.hooks[_hookIndex] === undefined) {
     _currentNode.hooks[_hookIndex] = {
-      type: "memo",
+      type: HookType.MEMO,
       memo: callback(),
       dependencies,
     };
   } else {
     const hook = _currentNode.hooks[_hookIndex];
-    if (hook.type !== "memo" || !hook.dependencies) {
+    if (hook.type !== HookType.MEMO || !hook.dependencies) {
       throw new Error("Something went wrong.");
     }
 
@@ -530,14 +572,18 @@ export const useMemo = <T>(callback: () => T, dependencies: any[]): T => {
 
     if (shouldRun) {
       const memo = callback();
-      _currentNode.hooks[_hookIndex] = { type: "memo", memo, dependencies };
+      _currentNode.hooks[_hookIndex] = {
+        type: HookType.MEMO,
+        memo,
+        dependencies,
+      };
     }
   }
 
   _hookIndex += 1;
 
   const hook = _currentNode.hooks[_hookIndex - 1];
-  if (hook.type !== "memo") {
+  if (hook.type !== HookType.MEMO) {
     throw new Error("Something went wrong.");
   }
 
@@ -569,21 +615,21 @@ export const useContext = <T>(context: Context<T>): T => {
   // Return whatever value is. Undefined or null might be intentional and can
   // make a difference.
 
-  if (!_currentNode || !("hooks" in _currentNode) || !_currentNode.hooks) {
+  if (!_currentNode || _currentNode.kind !== NodeType.COMPONENT) {
     throw new Error("Can't call useContext on this node.");
   }
 
   const newValue = contextValues.get(context);
   if (_currentNode.hooks[_hookIndex] === undefined || newValue) {
     _currentNode.hooks[_hookIndex] = {
-      type: "context",
+      type: HookType.CONTEXT,
       context: newValue.value,
     };
   }
 
   const hook = _currentNode.hooks[_hookIndex];
 
-  if (hook.type !== "context") {
+  if (hook.type !== HookType.CONTEXT) {
     throw new Error("Something went wrong.");
   }
 
@@ -595,6 +641,7 @@ export let _rootNode: RNode | null = null;
 
 export const render = (element: RElement, container: HTMLElement) => {
   _rootNode = {
+    kind: NodeType.HOST,
     props: {
       children: [element],
     },
