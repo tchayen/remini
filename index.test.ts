@@ -447,9 +447,7 @@ describe("useEffect", () => {
 
   it("does not work outside component", () => {
     expect(() => {
-      useEffect(() => {
-        console.log();
-      }, []);
+      useEffect(() => {}, []);
     }).toThrowError("Executing useEffect for non-function element.");
   });
 });
@@ -590,7 +588,7 @@ describe("Context API", () => {
     document.body.appendChild(root);
 
     type Session = { username: string } | null;
-    const SessionContext = createContext<Session>(null);
+    const SessionContext = createContext<Session>();
 
     const User = () => {
       const session = useContext(SessionContext);
@@ -628,10 +626,10 @@ describe("Context API", () => {
     document.body.appendChild(root);
 
     type Theme = "light" | "dark";
-    const ThemeContext = createContext<Theme>("light");
+    const ThemeContext = createContext<Theme>();
 
     type Session = { username: string } | null;
-    const SessionContext = createContext<Session>({ username: "Alice" });
+    const SessionContext = createContext<Session>();
 
     const User = () => {
       const theme = useContext(ThemeContext);
@@ -680,7 +678,7 @@ describe("Context API", () => {
     //
     // P(x) - provider with x as the value.
 
-    const Context = createContext(undefined);
+    const Context = createContext();
 
     const B = () => {
       const context = useContext(Context);
@@ -804,6 +802,63 @@ describe("DOM", () => {
     button.click();
 
     expect(value.innerHTML).toBe("1");
+  });
+
+  it("works with replacing list of nodes with another list", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const PlaceholderPost = ({ number }: { number: number }) =>
+      c("div", {}, `placeholder-${number}`);
+
+    type User = {
+      name: string;
+    };
+
+    const Post = ({ name }: User) => c("div", {}, `u-${name}`);
+
+    const App = () => {
+      const [loading, setLoading] = useState(true);
+      const [data, setData] = useState<User[]>([]);
+
+      useEffect(() => {
+        setTimeout(() => {
+          setData([{ name: "Alice" }, { name: "Bob" }]);
+          setLoading(false);
+        }, 500);
+      }, []);
+
+      return c(
+        "div",
+        {},
+        loading
+          ? c(
+              "div",
+              {},
+              c(PlaceholderPost, { number: 1 }),
+              c(PlaceholderPost, { number: 2 }),
+              c(PlaceholderPost, { number: 3 })
+            )
+          : c(
+              "div",
+              {},
+              data.map((post) => c(Post, post))
+            )
+      );
+    };
+
+    const tree = c(App);
+    render(tree, root);
+
+    expect(document.body.innerHTML).toBe(
+      "<div><div><div><div>placeholder-1</div><div>placeholder-2</div><div>placeholder-3</div></div></div></div>"
+    );
+
+    jest.runOnlyPendingTimers();
+
+    expect(document.body.innerHTML).toBe(
+      "<div><div><div><div>u-Alice</div><div>u-Bob</div></div></div></div>"
+    );
   });
 
   xit("has text nodes updated", () => {

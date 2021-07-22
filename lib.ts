@@ -153,8 +153,12 @@ const update = (node: RNode, element: RElement) => {
   ) {
     if (node.type === SPECIAL_TYPES.PROVIDER) {
       const currentValue = contextValues.get(node.context);
-      replacedContext = { context: node.context, value: currentValue };
-      contextValues.set(node.context, node.props.value);
+
+      if (currentValue) {
+        replacedContext = { context: node.context, value: currentValue };
+      }
+
+      contextValues.set(node.context, { value: node.props.value });
     }
 
     const { children } = element.props;
@@ -183,11 +187,6 @@ const update = (node: RNode, element: RElement) => {
       return;
     }
 
-    if (expected === undefined) {
-      // This is when children was undefined.
-      return;
-    }
-
     if (current && expected && current.type === expected.type) {
       // UPDATE
       if (typeof current.type === "string") {
@@ -199,7 +198,6 @@ const update = (node: RNode, element: RElement) => {
     } else if (current && expected && current.type !== expected.type) {
       // REPLACE
       let newNode: RNode;
-
       if (expected.type === SPECIAL_TYPES.PROVIDER) {
         newNode = {
           context: expected.props.context,
@@ -217,10 +215,6 @@ const update = (node: RNode, element: RElement) => {
         };
 
         if (typeof expected.type === "string") {
-          if ("dom" in current) {
-            removeDom(current);
-          }
-
           const firstParentWithDom = findClosestDom(node);
           if (!firstParentWithDom.dom) {
             throw new Error("Missing DOM.");
@@ -241,10 +235,10 @@ const update = (node: RNode, element: RElement) => {
           }
         });
 
-        const child = current.descendants[0];
-
-        if ("dom" in child) {
-          removeDom(findClosestDom(child));
+        for (const child of current.descendants) {
+          if ("dom" in child) {
+            removeDom(findClosestDom(child));
+          }
         }
       }
 
@@ -347,7 +341,9 @@ const update = (node: RNode, element: RElement) => {
   });
 
   if (node.type === SPECIAL_TYPES.PROVIDER && replacedContext !== null) {
-    contextValues.set(replacedContext.context, replacedContext.value);
+    contextValues.set(replacedContext.context, {
+      value: replacedContext.value,
+    });
   }
 
   _currentNode = previousNode;
@@ -408,7 +404,6 @@ export const useEffect = (
       hook.cleanup = cleanup ? cleanup : undefined;
     } else if (dependencies) {
       // COMPARE DEPENDENCIES
-
       const hook = c.hooks[i];
       if (hook.type !== "effect" || hook.dependencies === undefined) {
         throw new Error("Something went wrong");
@@ -578,13 +573,17 @@ export const useContext = <T>(context: Context<T>): T => {
     throw new Error("Can't call useContext on this node.");
   }
 
-  _currentNode.hooks[_hookIndex] = {
-    type: "context",
-    context: contextValues.get(context),
-  };
+  const newValue = contextValues.get(context);
+  if (_currentNode.hooks[_hookIndex] === undefined || newValue) {
+    _currentNode.hooks[_hookIndex] = {
+      type: "context",
+      context: newValue.value,
+    };
+  }
+
   _hookIndex += 1;
 
-  return contextValues.get(context);
+  return _currentNode.hooks[_hookIndex - 1].context;
 };
 
 export let _rootNode: RNode | null = null;
