@@ -9,7 +9,7 @@ import {
 type Children = RElement[] | string | null;
 
 type ElementProps = {
-  children: Children;
+  children: (string | RElement | null)[];
   [key: string]: any;
 };
 
@@ -30,6 +30,62 @@ export type RElement = {
   type: ComponentType;
   props: ElementProps;
 };
+
+export enum NodeType {
+  COMPONENT = 1,
+  HOST = 2,
+  TEXT = 3,
+  PROVIDER = 4,
+  NULL = 5,
+}
+
+export type ComponentNode = {
+  kind: NodeType.COMPONENT;
+  type: RenderFunction;
+  props: ElementProps;
+  parent: RNode | null;
+  descendants: RNode[];
+  hooks: Hook[];
+};
+
+export type HostNode = {
+  kind: NodeType.HOST;
+  type: string;
+  props: ElementProps;
+  parent: RNode | null;
+  descendants: RNode[];
+  dom: Node;
+};
+
+export type TextNode = {
+  kind: NodeType.TEXT;
+  content: string;
+  parent: RNode | null;
+  dom: Node;
+};
+
+export type ProviderNode = {
+  kind: NodeType.PROVIDER;
+  type: SPECIAL_TYPES.PROVIDER;
+  props: ElementProps;
+  parent: RNode | null;
+  context: Context<any>;
+  descendants: RNode[];
+};
+
+export type NullNode = {
+  kind: NodeType.NULL;
+  type: null;
+  parent: RNode | null;
+  descendants: RNode[];
+};
+
+export type RNode =
+  | ComponentNode
+  | HostNode
+  // | TextNode
+  | ProviderNode
+  | NullNode;
 
 enum HookType {
   STATE = 1,
@@ -63,49 +119,6 @@ export type Hook =
       dependencies?: any[];
     };
 
-export enum NodeType {
-  COMPONENT = 1,
-  HOST = 2,
-  PROVIDER = 3,
-  NULL = 4,
-}
-
-export type ComponentNode = {
-  kind: NodeType.COMPONENT;
-  type: RenderFunction;
-  props: ElementProps;
-  parent: RNode | null;
-  descendants: RNode[];
-  hooks: Hook[];
-};
-
-export type HostNode = {
-  kind: NodeType.HOST;
-  type: string;
-  props: ElementProps;
-  parent: RNode | null;
-  descendants: RNode[];
-  dom: Node;
-};
-
-export type ProviderNode = {
-  kind: NodeType.PROVIDER;
-  type: SPECIAL_TYPES.PROVIDER;
-  props: ElementProps;
-  parent: RNode | null;
-  context: Context<any>;
-  descendants: RNode[];
-};
-
-export type NullNode = {
-  kind: NodeType.NULL;
-  type: null;
-  parent: RNode | null;
-  descendants: RNode[];
-};
-
-export type RNode = ComponentNode | HostNode | ProviderNode | NullNode;
-
 export function createElement(
   component: ComponentType,
   props: Props,
@@ -125,7 +138,7 @@ export function createElement(
 ): RElement {
   let normalizedChildren;
   if (children.length === 1 && typeof children[0] === "string") {
-    normalizedChildren = children[0];
+    normalizedChildren = children;
   } else if (children.length === 0) {
     normalizedChildren = null;
   } else {
@@ -159,7 +172,7 @@ const update = (node: RNode, element: RElement | null) => {
   //   return;
   // }
 
-  let elements: RElement[] = [];
+  let elements: (RElement | string | null)[] = [];
   if (node.kind === NodeType.COMPONENT) {
     _currentNode = node;
     _hookIndex = 0;
@@ -182,14 +195,13 @@ const update = (node: RNode, element: RElement | null) => {
     }
 
     const { children } = element.props;
-    if (Array.isArray(children)) {
-      elements = children;
-    }
+
+    elements = children;
   }
 
   // Reconcile.
   const length = Math.max(node.descendants.length, elements.length);
-  const pairs: [left: RNode, right: RElement][] = [];
+  const pairs: [left: RNode, right: RElement | string | null][] = [];
   for (let i = 0; i < length; i++) {
     pairs.push([node.descendants[i], elements[i]]);
   }
@@ -197,6 +209,7 @@ const update = (node: RNode, element: RElement | null) => {
   pairs.forEach(([current, expected]) => {
     if (typeof expected === "string") {
       // TODO ??
+      // console.log("expected is a string", current, expected);
       return;
     }
 

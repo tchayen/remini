@@ -68,8 +68,11 @@ export const insertDom = (parent: Node, node: RNode, element: RElement) => {
 
   parent.appendChild(html);
 
-  if (typeof element.props.children === "string") {
-    html.appendChild(document.createTextNode(element.props.children));
+  if (
+    element.props.children?.length === 1 &&
+    typeof element.props.children[0] === "string"
+  ) {
+    html.appendChild(document.createTextNode(element.props.children[0]));
   }
 
   return html;
@@ -140,8 +143,10 @@ export const updateDom = (current: RNode, expected: RElement) => {
 
   // If children was text but is now gone.
   if (
-    typeof current.props.children === "string" &&
-    typeof expected.props.children !== "string"
+    current.props.children?.length === 1 &&
+    typeof current.props.children[0] === "string" &&
+    (expected.props.children?.length !== 1 ||
+      typeof expected.props.children[0] !== "string")
   ) {
     const clone = current.dom.cloneNode(false);
 
@@ -153,12 +158,14 @@ export const updateDom = (current: RNode, expected: RElement) => {
 
   // If children is text and it changed.
   if (
-    typeof current.props.children === "string" &&
-    typeof expected.props.children === "string"
+    current.props.children?.length === 1 &&
+    typeof current.props.children[0] === "string" &&
+    expected.props.children?.length === 1 &&
+    typeof expected.props.children[0] === "string"
   ) {
-    if (current.props.children !== expected.props.children) {
+    if (current.props.children[0] !== expected.props.children[0]) {
       html.firstChild?.replaceWith(
-        document.createTextNode(expected.props.children)
+        document.createTextNode(expected.props.children[0])
       );
     }
   }

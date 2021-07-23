@@ -27,7 +27,7 @@ describe("createElement", () => {
           {
             type: "strong",
             props: {
-              children: "Hello world",
+              children: ["Hello world"],
             },
           },
         ],
@@ -44,7 +44,7 @@ describe("createElement", () => {
       type: "a",
       props: {
         href: "https://google.com",
-        children: "Google",
+        children: ["Google"],
       },
     };
 
@@ -70,13 +70,13 @@ describe("createElement", () => {
           {
             type: Title,
             props: {
-              children: "Hello world",
+              children: ["Hello world"],
             },
           },
           {
             type: "span",
             props: {
-              children: "Text",
+              children: ["Text"],
             },
           },
         ],
@@ -103,13 +103,13 @@ describe("createElement", () => {
           {
             type: Title,
             props: {
-              children: "Hello world",
+              children: ["Hello world"],
             },
           },
           {
             type: "span",
             props: {
-              children: "Text",
+              children: ["Text"],
             },
           },
         ],
@@ -131,7 +131,7 @@ describe("createElement", () => {
             {
               type: "span",
               props: {
-                children: "mail",
+                children: ["mail"],
               },
             },
           ],
@@ -155,13 +155,13 @@ describe("createElement", () => {
             {
               type: "span",
               props: {
-                children: "orange",
+                children: ["orange"],
               },
             },
             {
               type: "span",
               props: {
-                children: "apple",
+                children: ["apple"],
               },
             },
           ],
@@ -180,7 +180,7 @@ describe("createElement", () => {
             {
               type: "span",
               props: {
-                children: "Text",
+                children: ["Text"],
               },
             },
           ],
@@ -226,7 +226,7 @@ describe("render", () => {
         throw new Error("Encountered null node.");
       }
 
-      return node.props.children;
+      return node.props.children[0];
     };
 
     let update = () => {};
