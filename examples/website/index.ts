@@ -31,7 +31,7 @@ const Input = ({ loading, ...props }: any) => {
 const Label = ({ children, ...props }: any) => {
   return c(
     "label",
-    { ...props, class: "text-sm text-gray-600 font-bold" },
+    { ...props, class: "text-sm text-gray-700 font-bold" },
     children
   );
 };
@@ -77,12 +77,12 @@ const Spinner = () => {
 
 const LoginForm = () => {
   const session = useContext(SessionContext);
-  const [login, setLogin] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const onLogin = (event: any) => {
-    setLogin(event.target.value);
+  const onEmail = (event: any) => {
+    setEmail(event.target.value);
   };
 
   const onPassword = (event: any) => {
@@ -117,11 +117,12 @@ const LoginForm = () => {
             c(Spinner)
           )
         : null,
-      c(Label, { for: "login" }, "Login"),
+      c(Label, { for: "email" }, "Email"),
       c(Input, {
-        login,
-        onInput: onLogin,
-        id: "login",
+        email,
+        onInput: onEmail,
+        id: "email",
+        type: "email",
         loading,
         placeholder: "test@example.org",
       }),
@@ -211,7 +212,7 @@ const Page = () => {
         },
       ]);
       setLoading(false);
-    }, 50000);
+    }, 500);
   }, []);
 
   return c(
