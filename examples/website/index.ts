@@ -23,7 +23,7 @@ const Input = ({ loading, ...props }: any) => {
       ...props,
       ...(loading ? { disabled: "disabled" } : {}),
       class:
-        "p-2 bg-gray-100 appearance-none border-2 border-gray-100 rounded w-full text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500",
+        "p-2 bg-white appearance-none border border-gray-200 rounded w-full text-gray-700 leading-tight focus:outline-none focus:ring focus:border-blue-500",
     })
   );
 };
@@ -44,7 +44,7 @@ const Button = ({ children, loading, ...props }: any) => {
       type: "submit",
       ...(loading ? { disabled: "disabled" } : {}),
       class:
-        "w-full py-2 px-4 bg-purple-500 hover:bg-purple-700 text-white font-bold rounded focus:outline-none focus:shadow-outline",
+        "w-full py-2 px-4 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500",
     },
     children
   );
@@ -105,9 +105,7 @@ const LoginForm = () => {
       "form",
       {
         onSubmit,
-        class: `p-6 bg-white rounded w-96 relative ${
-          loading ? "opacity-60" : ""
-        }`,
+        class: `w-96 relative ${loading ? "opacity-60" : ""}`,
       },
       loading
         ? c(
@@ -137,6 +135,12 @@ const LoginForm = () => {
         placeholder: "********",
       }),
       c(Button, { loading }, "Sign in")
+    ),
+    c(
+      "div",
+      { class: "flex justify-center text-sm mt-4 text-gray-400" },
+      "Copyright 2021 ",
+      c("a", { href: "cool.company", class: "text-blue-500" }, "cool.company")
     )
   );
 };
@@ -159,7 +163,7 @@ const Post = ({ author, content, avatarColor }: PostData) => {
         "div",
         { class: "flex-1 py-1" },
         c("div", { class: "font-bold text-gray-700" }, author),
-        c("div", { class: "" }, c("div", { class: "text-gray-500" }, content))
+        c("div", {}, c("div", { class: "text-gray-500" }, content))
       )
     )
   );
@@ -207,7 +211,7 @@ const Page = () => {
         },
       ]);
       setLoading(false);
-    }, 500);
+    }, 50000);
   }, []);
 
   return c(
@@ -231,7 +235,7 @@ const App = () => {
     { value: { token, setToken } },
     c(
       "div",
-      { class: "w-screen h-screen flex justify-center p-10 bg-gray-100" },
+      { class: "w-screen h-screen flex justify-center p-10" },
       token ? c(Page) : c(LoginForm)
     )
   );
