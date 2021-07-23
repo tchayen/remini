@@ -182,11 +182,7 @@ export const removeDom = (node: RNode) => {
 export const findClosestDom = (node: RNode): HostNode => {
   let current = node;
 
-  while (
-    current.type !== null &&
-    current.kind !== NodeType.HOST &&
-    current.parent
-  ) {
+  while (current.kind !== NodeType.HOST && current.parent) {
     current = current.parent;
   }
 
@@ -200,11 +196,7 @@ export const findClosestDom = (node: RNode): HostNode => {
 export const findClosestComponent = (node: RNode): ComponentNode | null => {
   let current = node;
 
-  while (
-    current.type !== null &&
-    current.parent &&
-    current.kind === NodeType.HOST
-  ) {
+  while (current.kind === NodeType.HOST && current.parent) {
     current = current.parent;
   }
 

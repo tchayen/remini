@@ -204,7 +204,7 @@ const update = (node: RNode, element: RElement | null) => {
 
     if (current && expected && current.type === expected.type) {
       // UPDATE
-      if (typeof current.type === "string") {
+      if (current.kind === NodeType.HOST) {
         updateDom(current, expected);
       }
 
@@ -375,7 +375,7 @@ const update = (node: RNode, element: RElement | null) => {
     }
   });
 
-  if (node.type === SPECIAL_TYPES.PROVIDER && replacedContext !== null) {
+  if (node.kind === NodeType.PROVIDER && replacedContext !== null) {
     contextValues.set(replacedContext.context, {
       value: replacedContext.value,
     });
