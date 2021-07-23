@@ -6,7 +6,7 @@ import {
   updateDom,
 } from "./dom";
 
-type Children = RElement | RElement[] | string;
+type Children = RElement | RElement[] | string | null;
 
 type ElementProps = {
   children: Children;
@@ -26,13 +26,10 @@ export enum SPECIAL_TYPES {
 
 export type ComponentType = RenderFunction | SPECIAL_TYPES | string;
 
-export type RElement =
-  | {
-      type: ComponentType;
-      props: ElementProps;
-    }
-  | string
-  | null;
+export type RElement = {
+  type: ComponentType;
+  props: ElementProps;
+};
 
 enum HookType {
   STATE = 1,
@@ -118,13 +115,7 @@ export function createElement(
 export function createElement(
   component: ComponentType,
   props?: Props,
-  ...children: RElement[]
-): RElement;
-
-export function createElement(
-  component: ComponentType,
-  props?: Props,
-  children?: string
+  ...children: (RElement | string | null)[]
 ): RElement;
 
 export function createElement(
@@ -152,7 +143,7 @@ let _hookIndex = 0;
 
 const contextValues: Map<Context<any>, any> = new Map();
 
-const update = (node: RNode, element: RElement) => {
+const update = (node: RNode, element: RElement | null) => {
   let previousNode = _currentNode;
   let previousIndex = _hookIndex;
 
@@ -394,12 +385,12 @@ const update = (node: RNode, element: RElement) => {
   _hookIndex = previousIndex;
 };
 
-type Job = { node: RNode; element: RElement };
+type Job = { node: RNode; element: RElement | null };
 let updating = false;
 let tasks: Job[] = [];
 let effects: (() => void)[] = [];
 
-const runUpdateLoop = (node: RNode, element: RElement) => {
+const runUpdateLoop = (node: RNode, element: RElement | null) => {
   tasks.push({ node, element });
 
   if (updating) {

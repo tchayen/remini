@@ -18,7 +18,7 @@ beforeEach(() => {
 
 describe("createElement", () => {
   it("works for simple HTML", () => {
-    const tree = c("button", {}, c("strong", {}, "Hello world"));
+    const result = c("button", {}, c("strong", {}, "Hello world"));
 
     const expected = {
       type: "button",
@@ -34,7 +34,7 @@ describe("createElement", () => {
       },
     };
 
-    expect(tree).toStrictEqual(expected);
+    expect(result).toStrictEqual(expected);
   });
 
   it("works with props", () => {
@@ -56,7 +56,7 @@ describe("createElement", () => {
       return c("h1", {}, children);
     };
 
-    const tree = c(
+    const result = c(
       "div",
       {},
       c(Title, {}, "Hello world"),
@@ -83,7 +83,7 @@ describe("createElement", () => {
       },
     };
 
-    expect(tree).toStrictEqual(expected);
+    expect(result).toStrictEqual(expected);
   });
 
   it("works with array of children", () => {
@@ -91,7 +91,7 @@ describe("createElement", () => {
       return c("h1", {}, children);
     };
 
-    const tree = c("div", {}, [
+    const result = c("div", {}, [
       c(Title, {}, "Hello world"),
       c("span", {}, "Text"),
     ]);
@@ -116,7 +116,84 @@ describe("createElement", () => {
       },
     };
 
-    expect(tree).toStrictEqual(expected);
+    expect(result).toStrictEqual(expected);
+  });
+
+  describe("changes", () => {
+    it("works with text node as a sibling of host node", () => {
+      // <div>Contact: <span>mail</span></div>
+      const result = c("div", {}, "Contact: ", c("span", {}, "mail"));
+      const expected = {
+        type: "div",
+        props: {
+          children: [
+            "Contact: ",
+            {
+              type: "span",
+              props: {
+                children: "mail",
+              },
+            },
+          ],
+        },
+      };
+      expect(result).toStrictEqual(expected);
+    });
+
+    it("works for array of items", () => {
+      // <div>{items.map(item => <span>{item}</span>)</div>
+      const items = ["orange", "apple"];
+      const result = c(
+        "div",
+        {},
+        items.map((item) => c("span", {}, item))
+      );
+      const expected = {
+        type: "div",
+        props: {
+          children: [
+            {
+              type: "span",
+              props: {
+                children: "orange",
+              },
+            },
+            {
+              type: "span",
+              props: {
+                children: "apple",
+              },
+            },
+          ],
+        },
+      };
+      expect(result).toStrictEqual(expected);
+    });
+
+    it("works with null nodes", () => {
+      const result = c("div", {}, null, c("span", {}, "Text"));
+      const expected = {
+        type: "div",
+        props: {
+          children: [
+            null,
+            {
+              type: "span",
+              props: {
+                children: "Text",
+              },
+            },
+          ],
+        },
+      };
+      expect(result).toStrictEqual(expected);
+    });
+
+    it("", () => {
+      // TODO add fragments.
+      // // <><div>a</div><div>b</div></>
+      // c('', {}, c('div', {}, 'a'), c('div', {}, 'b'));
+    });
   });
 });
 
