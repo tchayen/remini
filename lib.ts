@@ -9,7 +9,7 @@ import {
 type Children = RElement[] | string | null;
 
 type ElementProps = {
-  children: (string | RElement | null)[];
+  children: RElement[];
   [key: string]: any;
 };
 
@@ -26,11 +26,6 @@ export enum SPECIAL_TYPES {
 
 export type ComponentType = RenderFunction | SPECIAL_TYPES | string;
 
-export type RElement = {
-  type: ComponentType;
-  props: ElementProps;
-};
-
 export enum NodeType {
   COMPONENT = 1,
   HOST = 2,
@@ -39,51 +34,71 @@ export enum NodeType {
   NULL = 5,
 }
 
-export type ComponentNode = {
+export type ComponentElement = {
   kind: NodeType.COMPONENT;
   type: RenderFunction;
   props: ElementProps;
+};
+
+export type ComponentNode = ComponentElement & {
   parent: RNode | null;
   descendants: RNode[];
   hooks: Hook[];
 };
 
-export type HostNode = {
+export type HostElement = {
   kind: NodeType.HOST;
   type: string;
   props: ElementProps;
+};
+
+export type HostNode = HostElement & {
   parent: RNode | null;
   descendants: RNode[];
   dom: Node;
 };
 
-export type TextNode = {
+export type TextElement = {
   kind: NodeType.TEXT;
   content: string;
+};
+
+export type TextNode = TextElement & {
   parent: RNode | null;
   dom: Node;
 };
 
-export type ProviderNode = {
+export type ProviderElement = {
   kind: NodeType.PROVIDER;
-  type: SPECIAL_TYPES.PROVIDER;
   props: ElementProps;
+};
+
+export type ProviderNode = ProviderElement & {
   parent: RNode | null;
   context: Context<any>;
   descendants: RNode[];
 };
 
-export type NullNode = {
+export type NullElement = {
   kind: NodeType.NULL;
   type: null;
-  parent: RNode | null;
-  descendants: RNode[];
 };
+
+export type NullNode = NullElement & {
+  parent: RNode | null;
+};
+
+export type RElement =
+  | ComponentElement
+  | HostElement
+  | TextElement
+  | ProviderElement
+  | NullElement;
 
 export type RNode =
   | ComponentNode
   | HostNode
-  // | TextNode
+  | TextNode
   | ProviderNode
   | NullNode;
 
@@ -136,10 +151,44 @@ export function createElement(
   props: Props,
   ...children: any
 ): RElement {
-  return {
-    type: component,
-    props: { ...(props || {}), children: children.flat() },
+  const p = {
+    ...(props || {}),
+    children: children.flat().map((child: RElement | string | null) => {
+      if (typeof child === "string") {
+        return {
+          kind: NodeType.TEXT,
+          content: child,
+        };
+      } else if (child === null) {
+        return {
+          kind: NodeType.NULL,
+        };
+      } else {
+        return child;
+      }
+    }),
   };
+
+  if (typeof component === "function") {
+    return {
+      kind: NodeType.COMPONENT,
+      type: component,
+      props: p,
+    };
+  } else if (typeof component === "string") {
+    return {
+      kind: NodeType.HOST,
+      type: component,
+      props: p,
+    };
+  } else if (component === SPECIAL_TYPES.PROVIDER) {
+    return {
+      kind: NodeType.PROVIDER,
+      props: p,
+    };
+  }
+
+  throw new Error("Something went wrong.");
 }
 
 let _currentNode: RNode | null = null;
@@ -153,17 +202,14 @@ const update = (node: RNode, element: RElement | null) => {
 
   let replacedContext = null;
 
-  // if (typeof element === "string") {
-  //   // TODO
-  //   // This is when element is a string.
-  //   return;
-  // }
+  if (
+    (element && element.kind === NodeType.TEXT) ||
+    node.kind === NodeType.TEXT
+  ) {
+    return;
+  }
 
-  // if (node.kind === NodeType.TEXT) {
-  //   return;
-  // }
-
-  let elements: (RElement | string | null)[] = [];
+  let elements: RElement[] = [];
   if (node.kind === NodeType.COMPONENT) {
     _currentNode = node;
     _hookIndex = 0;
@@ -171,8 +217,11 @@ const update = (node: RNode, element: RElement | null) => {
     // support returning arrays from render functions.
     elements = [node.type(node.props)];
     _hookIndex = 0;
+  } else if (node.kind === NodeType.NULL) {
+    return;
   } else if (
-    element !== null &&
+    element &&
+    "props" in element &&
     (node.kind === NodeType.HOST || node.kind === NodeType.PROVIDER)
   ) {
     if (node.kind === NodeType.PROVIDER) {
@@ -190,39 +239,82 @@ const update = (node: RNode, element: RElement | null) => {
 
   // Reconcile.
   const length = Math.max(node.descendants.length, elements.length);
-  const pairs: [left: RNode, right: RElement | string | null][] = [];
+  const pairs: [left: RNode | undefined, right: RElement | undefined][] = [];
   for (let i = 0; i < length; i++) {
     pairs.push([node.descendants[i], elements[i]]);
   }
 
   pairs.forEach(([current, expected]) => {
-    if (typeof expected === "string") {
-      // TODO ??
-      // console.log("expected is a string", current, expected);
-      return;
-    }
-
-    if (current && expected && current.type === expected.type) {
+    if (
+      current &&
+      expected &&
+      ((current.kind === NodeType.COMPONENT &&
+        expected.kind === NodeType.COMPONENT &&
+        current.type === expected.type) ||
+        (current.kind === NodeType.HOST &&
+          expected.kind === NodeType.HOST &&
+          current.type === expected.type) ||
+        (current.kind === NodeType.PROVIDER &&
+          expected.kind === NodeType.PROVIDER) ||
+        (current.kind === NodeType.TEXT && expected.kind === NodeType.TEXT))
+    ) {
       // UPDATE
-      if (current.kind === NodeType.HOST) {
+      if (current.kind === NodeType.HOST && expected.kind === NodeType.HOST) {
         updateDom(current, expected);
+      } else if (
+        // Text value changed.
+        current.kind === NodeType.TEXT &&
+        expected.kind === NodeType.TEXT &&
+        current.content !== expected.content
+      ) {
+        current.dom.nodeValue = expected.content;
       }
 
-      current.props = expected.props;
+      // Props can be updated.
+      if ("props" in current && "props" in expected) {
+        current.props = expected.props;
+      }
+
       update(current, expected);
-    } else if (current && expected && current.type !== expected.type) {
+    } else if (current && expected) {
       // REPLACE
       let newNode: RNode;
-      if (expected.type === SPECIAL_TYPES.PROVIDER) {
+      if (expected.kind === NodeType.NULL) {
+        newNode = {
+          kind: NodeType.NULL,
+          type: null,
+          parent: node,
+        };
+      } else if (expected.kind === NodeType.PROVIDER) {
         newNode = {
           kind: NodeType.PROVIDER,
           context: expected.props.context,
           props: expected.props,
-          type: expected.type,
           parent: node,
           descendants: [],
         };
-      } else if (typeof expected.type === "string") {
+      } else if (expected.kind === NodeType.TEXT) {
+        const firstParentWithDom = findClosestDom(node);
+        if (!firstParentWithDom.dom) {
+          throw new Error("Missing DOM.");
+        }
+
+        let nodeConstruction: any = {
+          ...expected,
+          parent: node,
+        };
+
+        if (current.kind === NodeType.TEXT) {
+          nodeConstruction.dom = current.dom;
+          nodeConstruction.dom.nodeValue = expected.content;
+        } else {
+          const dom = document.createTextNode(expected.content);
+          firstParentWithDom.dom.appendChild(dom);
+          nodeConstruction.dom = dom;
+        }
+
+        newNode = nodeConstruction;
+      } else if (expected.kind === NodeType.HOST) {
         const firstParentWithDom = findClosestDom(node);
         if (!firstParentWithDom.dom) {
           throw new Error("Missing DOM.");
@@ -242,7 +334,7 @@ const update = (node: RNode, element: RElement | null) => {
         );
 
         newNode = nodeConstruction;
-      } else if (typeof expected.type === "function") {
+      } else if (expected.kind === NodeType.COMPONENT) {
         newNode = {
           kind: NodeType.COMPONENT,
           props: expected.props,
@@ -271,26 +363,41 @@ const update = (node: RNode, element: RElement | null) => {
 
       node.descendants[node.descendants.indexOf(current)] = newNode;
       update(newNode, expected);
-    } else if (!current) {
+    } else if (!current && expected !== undefined) {
       // ADD
       let newNode: RNode;
-      if (expected === null) {
+      if (expected.kind === NodeType.NULL) {
         newNode = {
           kind: NodeType.NULL,
           type: null,
           parent: node,
-          descendants: [],
         };
-      } else if (expected.type === SPECIAL_TYPES.PROVIDER) {
+      } else if (expected.kind === NodeType.TEXT) {
+        // TODO: add DOM
+        let nodeConstruction: any = {
+          kind: NodeType.TEXT,
+          content: expected.content,
+          parent: node,
+        };
+
+        const firstParentWithDom = findClosestDom(node);
+        if (!firstParentWithDom.dom) {
+          throw new Error("Missing DOM.");
+        }
+
+        const dom = document.createTextNode(expected.content);
+        firstParentWithDom.dom.appendChild(dom);
+        nodeConstruction.dom = dom;
+        newNode = nodeConstruction;
+      } else if (expected.kind === NodeType.PROVIDER) {
         newNode = {
           kind: NodeType.PROVIDER,
           props: expected.props,
-          type: expected.type,
           parent: node,
           descendants: [],
           context: expected.props.context,
         };
-      } else if (typeof expected.type === "string") {
+      } else if (expected.kind === NodeType.HOST) {
         let nodeConstruction: any = {
           kind: NodeType.HOST,
           props: expected.props,
@@ -319,7 +426,7 @@ const update = (node: RNode, element: RElement | null) => {
             }
           }
         }
-      } else if (typeof expected.type === "function") {
+      } else if (expected.kind === NodeType.COMPONENT) {
         newNode = {
           kind: NodeType.COMPONENT,
           props: expected.props,
@@ -334,9 +441,13 @@ const update = (node: RNode, element: RElement | null) => {
 
       node.descendants.push(newNode);
       update(newNode, expected);
-    } else if (!expected) {
+    } else if (current !== undefined && !expected) {
       // REMOVE
       const indexOfCurrent = node.descendants.indexOf(current);
+
+      if (current.kind === NodeType.PROVIDER) {
+        return;
+      }
 
       if (current.type === null) {
         return;
@@ -344,17 +455,17 @@ const update = (node: RNode, element: RElement | null) => {
 
       if (current.kind === NodeType.HOST) {
         removeDom(current);
-      }
-
-      if (current.kind === NodeType.COMPONENT) {
+      } else if (current.kind === NodeType.TEXT) {
+        // current.dom.parentNode?.removeChild(current.dom);
+      } else if (current.kind === NodeType.COMPONENT) {
         current.hooks.forEach((hook) => {
           if (hook.type === HookType.EFFECT && hook.cleanup) {
             hook.cleanup();
           }
         });
 
+        // It's safe to assume there's only one child descendant of component.
         const child = current.descendants[0];
-
         if (child && child.kind === NodeType.HOST) {
           removeDom(findClosestDom(child));
         }
@@ -365,7 +476,6 @@ const update = (node: RNode, element: RElement | null) => {
           kind: NodeType.NULL,
           type: null,
           parent: node,
-          descendants: [],
         };
 
         node.descendants[indexOfCurrent] = newNode;
@@ -592,14 +702,7 @@ export const createContext = <T>(): Context<T> => {
   const context: Context<T> = {};
 
   const Provider = <T>({ children, value }: ProviderProps<T>): RElement => {
-    return {
-      type: SPECIAL_TYPES.PROVIDER,
-      props: {
-        value,
-        children: Array.isArray(children) ? children : [children],
-        context,
-      },
-    };
+    return createElement(SPECIAL_TYPES.PROVIDER, { value, context }, children);
   };
 
   context.Provider = Provider;
@@ -632,7 +735,7 @@ export const useContext = <T>(context: Context<T>): T => {
   return hook.context;
 };
 
-export let _rootNode: RNode | null = null;
+export let _rootNode: HostNode | null = null;
 
 export const render = (element: RElement, container: HTMLElement) => {
   _rootNode = {

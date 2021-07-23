@@ -1,11 +1,4 @@
-import {
-  ComponentNode,
-  HostNode,
-  NodeType,
-  RElement,
-  RNode,
-  SPECIAL_TYPES,
-} from "./lib";
+import { ComponentNode, HostElement, HostNode, NodeType, RNode } from "./lib";
 
 const isEvent = (key: string) => !!key.match(new RegExp("on[A-Z].*"));
 const eventToKeyword = (key: string) => key.replace("on", "").toLowerCase();
@@ -39,17 +32,11 @@ const createElement = (type: string) => {
   }
 };
 
-export const insertDom = (parent: Node, node: RNode, element: RElement) => {
-  if (
-    node.kind !== NodeType.HOST ||
-    element === null ||
-    typeof element === "string" ||
-    element.type === SPECIAL_TYPES.PROVIDER ||
-    typeof element.type === "function"
-  ) {
-    throw new Error("This is not supposed to happen.");
-  }
-
+export const insertDom = (
+  parent: Node,
+  node: HostNode,
+  element: HostElement
+) => {
   const html = createElement(element.type);
 
   Object.entries(element.props).forEach(([key, value]) => {
@@ -67,31 +54,11 @@ export const insertDom = (parent: Node, node: RNode, element: RElement) => {
   });
 
   parent.appendChild(html);
-
-  if (
-    element.props.children?.length === 1 &&
-    typeof element.props.children[0] === "string"
-  ) {
-    html.appendChild(document.createTextNode(element.props.children[0]));
-  }
-
   return html;
 };
 
 // Update two DOM nodes of the same HTML tag.
-export const updateDom = (current: RNode, expected: RElement) => {
-  if (
-    expected === null ||
-    typeof expected == "string" ||
-    expected.type === SPECIAL_TYPES.PROVIDER
-  ) {
-    throw new Error("No!");
-  }
-
-  if (current.kind !== NodeType.HOST) {
-    throw new Error("Cannot update non-host node.");
-  }
-
+export const updateDom = (current: HostNode, expected: HostElement) => {
   const html = current.dom as HTMLElement;
 
   Object.keys(current.props).forEach((key) => {
@@ -140,38 +107,9 @@ export const updateDom = (current: RNode, expected: RElement) => {
       }
     }
   });
-
-  // If children was text but is now gone.
-  if (
-    current.props.children?.length === 1 &&
-    typeof current.props.children[0] === "string" &&
-    (expected.props.children?.length !== 1 ||
-      typeof expected.props.children[0] !== "string")
-  ) {
-    const clone = current.dom.cloneNode(false);
-
-    if (current.dom.parentNode) {
-      current.dom.parentNode.replaceChild(clone, current.dom);
-      current.dom = clone;
-    }
-  }
-
-  // If children is text and it changed.
-  if (
-    current.props.children?.length === 1 &&
-    typeof current.props.children[0] === "string" &&
-    expected.props.children?.length === 1 &&
-    typeof expected.props.children[0] === "string"
-  ) {
-    if (current.props.children[0] !== expected.props.children[0]) {
-      html.firstChild?.replaceWith(
-        document.createTextNode(expected.props.children[0])
-      );
-    }
-  }
 };
 
-export const removeDom = (node: RNode) => {
+export const removeDom = (node: HostNode) => {
   if (node.kind !== NodeType.HOST) {
     throw new Error("Tried to remove incorrect node.");
   }
@@ -196,7 +134,7 @@ export const findClosestDom = (node: RNode): HostNode => {
 export const findClosestComponent = (node: RNode): ComponentNode | null => {
   let current = node;
 
-  while (current.kind === NodeType.HOST && current.parent) {
+  while (current.kind !== NodeType.COMPONENT && current.parent) {
     current = current.parent;
   }
 

@@ -1,6 +1,7 @@
 import {
   createContext,
   createElement as c,
+  NodeType,
   render,
   useContext,
   useEffect,
@@ -22,12 +23,19 @@ describe("createElement", () => {
 
     const expected = {
       type: "button",
+      kind: NodeType.HOST,
       props: {
         children: [
           {
+            kind: NodeType.HOST,
             type: "strong",
             props: {
-              children: ["Hello world"],
+              children: [
+                {
+                  kind: NodeType.TEXT,
+                  content: "Hello world",
+                },
+              ],
             },
           },
         ],
@@ -41,10 +49,16 @@ describe("createElement", () => {
     const tree = c("a", { href: "https://google.com" }, "Google");
 
     const expected = {
+      kind: NodeType.HOST,
       type: "a",
       props: {
         href: "https://google.com",
-        children: ["Google"],
+        children: [
+          {
+            kind: NodeType.TEXT,
+            content: "Google",
+          },
+        ],
       },
     };
 
@@ -64,19 +78,32 @@ describe("createElement", () => {
     );
 
     const expected = {
+      kind: NodeType.HOST,
       type: "div",
       props: {
         children: [
           {
+            kind: NodeType.COMPONENT,
             type: Title,
             props: {
-              children: ["Hello world"],
+              children: [
+                {
+                  kind: NodeType.TEXT,
+                  content: "Hello world",
+                },
+              ],
             },
           },
           {
+            kind: NodeType.HOST,
             type: "span",
             props: {
-              children: ["Text"],
+              children: [
+                {
+                  kind: NodeType.TEXT,
+                  content: "Text",
+                },
+              ],
             },
           },
         ],
@@ -86,7 +113,7 @@ describe("createElement", () => {
     expect(result).toStrictEqual(expected);
   });
 
-  it("works with array of children", () => {
+  it("works with multiple children", () => {
     const Title = ({ children }: { children: string }) => {
       return c("h1", {}, children);
     };
@@ -97,19 +124,32 @@ describe("createElement", () => {
     ]);
 
     const expected = {
+      kind: NodeType.HOST,
       type: "div",
       props: {
         children: [
           {
+            kind: NodeType.COMPONENT,
             type: Title,
             props: {
-              children: ["Hello world"],
+              children: [
+                {
+                  kind: NodeType.TEXT,
+                  content: "Hello world",
+                },
+              ],
             },
           },
           {
+            kind: NodeType.HOST,
             type: "span",
             props: {
-              children: ["Text"],
+              children: [
+                {
+                  kind: NodeType.TEXT,
+                  content: "Text",
+                },
+              ],
             },
           },
         ],
@@ -119,92 +159,123 @@ describe("createElement", () => {
     expect(result).toStrictEqual(expected);
   });
 
-  describe("changes", () => {
-    it("works with text node as a sibling of host node", () => {
-      // <div>Contact: <span>mail</span></div>
-      const result = c("div", {}, "Contact: ", c("span", {}, "mail"));
-      const expected = {
-        type: "div",
-        props: {
-          children: [
-            "Contact: ",
-            {
-              type: "span",
-              props: {
-                children: ["mail"],
-              },
+  it("works with text node as a sibling of host node", () => {
+    // <div>Contact: <span>mail</span></div>
+    const result = c("div", {}, "Contact: ", c("span", {}, "mail"));
+    const expected = {
+      kind: NodeType.HOST,
+      type: "div",
+      props: {
+        children: [
+          {
+            kind: NodeType.TEXT,
+            content: "Contact: ",
+          },
+          {
+            kind: NodeType.HOST,
+            type: "span",
+            props: {
+              children: [
+                {
+                  kind: NodeType.TEXT,
+                  content: "mail",
+                },
+              ],
             },
-          ],
-        },
-      };
-      expect(result).toStrictEqual(expected);
-    });
+          },
+        ],
+      },
+    };
+    expect(result).toStrictEqual(expected);
+  });
 
-    it("works for array of items", () => {
-      // <div>{items.map(item => <span>{item}</span>)</div>
-      const items = ["orange", "apple"];
-      const result = c(
-        "div",
-        {},
-        items.map((item) => c("span", {}, item))
-      );
-      const expected = {
-        type: "div",
-        props: {
-          children: [
-            {
-              type: "span",
-              props: {
-                children: ["orange"],
-              },
+  it("works for array of items", () => {
+    // <div>{items.map(item => <span>{item}</span>)</div>
+    const items = ["orange", "apple"];
+    const result = c(
+      "div",
+      {},
+      items.map((item) => c("span", {}, item))
+    );
+    const expected = {
+      kind: NodeType.HOST,
+      type: "div",
+      props: {
+        children: [
+          {
+            kind: NodeType.HOST,
+            type: "span",
+            props: {
+              children: [
+                {
+                  kind: NodeType.TEXT,
+                  content: "orange",
+                },
+              ],
             },
-            {
-              type: "span",
-              props: {
-                children: ["apple"],
-              },
+          },
+          {
+            kind: NodeType.HOST,
+            type: "span",
+            props: {
+              children: [
+                {
+                  kind: NodeType.TEXT,
+                  content: "apple",
+                },
+              ],
             },
-          ],
-        },
-      };
-      expect(result).toStrictEqual(expected);
-    });
+          },
+        ],
+      },
+    };
+    expect(result).toStrictEqual(expected);
+  });
 
-    it("works with null nodes", () => {
-      const result = c("div", {}, null, c("span", {}, "Text"));
-      const expected = {
-        type: "div",
-        props: {
-          children: [
-            null,
-            {
-              type: "span",
-              props: {
-                children: ["Text"],
-              },
+  it("works with null nodes", () => {
+    const result = c("div", {}, null, c("span", {}, "Text"));
+    const expected = {
+      kind: NodeType.HOST,
+      type: "div",
+      props: {
+        children: [
+          {
+            kind: NodeType.NULL,
+          },
+          {
+            kind: NodeType.HOST,
+            type: "span",
+            props: {
+              children: [
+                {
+                  kind: NodeType.TEXT,
+                  content: "Text",
+                },
+              ],
             },
-          ],
-        },
-      };
-      expect(result).toStrictEqual(expected);
-    });
+          },
+        ],
+      },
+    };
+    expect(result).toStrictEqual(expected);
+  });
 
-    it("works with empty children", () => {
-      const result = c("input", {});
-      const expected = {
-        type: "input",
-        props: {
-          children: [],
-        },
-      };
-      expect(result).toStrictEqual(expected);
-    });
+  it("works with empty children", () => {
+    const result = c("input", {});
+    const expected = {
+      kind: NodeType.HOST,
+      type: "input",
+      props: {
+        children: [],
+      },
+    };
+    expect(result).toStrictEqual(expected);
+  });
 
-    it("", () => {
-      // TODO add fragments.
-      // // <><div>a</div><div>b</div></>
-      // c('', {}, c('div', {}, 'a'), c('div', {}, 'b'));
-    });
+  xit("", () => {
+    // TODO add fragments.
+    // // <><div>a</div><div>b</div></>
+    // c('', {}, c('div', {}, 'a'), c('div', {}, 'b'));
   });
 });
 
@@ -237,7 +308,7 @@ describe("render", () => {
         throw new Error("Encountered null node.");
       }
 
-      return node.props.children[0];
+      return node.props.children[0].content;
     };
 
     let update = () => {};
