@@ -6,7 +6,7 @@ import {
   updateDom,
 } from "./dom";
 
-type Children = RElement | RElement[] | string | null;
+type Children = RElement[] | string | null;
 
 type ElementProps = {
   children: Children;
@@ -149,11 +149,15 @@ const update = (node: RNode, element: RElement | null) => {
 
   let replacedContext = null;
 
-  if (typeof element === "string") {
-    // TODO
-    // This is when element is a string.
-    return;
-  }
+  // if (typeof element === "string") {
+  //   // TODO
+  //   // This is when element is a string.
+  //   return;
+  // }
+
+  // if (node.kind === NodeType.TEXT) {
+  //   return;
+  // }
 
   let elements: RElement[] = [];
   if (node.kind === NodeType.COMPONENT) {
@@ -163,9 +167,10 @@ const update = (node: RNode, element: RElement | null) => {
     // support returning arrays from render functions.
     elements = [node.type(node.props)];
     _hookIndex = 0;
-  } else if (element === null) {
-    // Empty node?
-  } else if (node.kind === NodeType.HOST || node.kind === NodeType.PROVIDER) {
+  } else if (
+    element !== null &&
+    (node.kind === NodeType.HOST || node.kind === NodeType.PROVIDER)
+  ) {
     if (node.kind === NodeType.PROVIDER) {
       const currentValue = contextValues.get(node.context);
 
@@ -177,16 +182,9 @@ const update = (node: RNode, element: RElement | null) => {
     }
 
     const { children } = element.props;
-    if (children === null) {
-    } else if (typeof children !== "string") {
-      elements = Array.isArray(children) ? children : [children];
-    } else {
-      // TODO
-      // This is when children array is a single string.
-      return;
+    if (Array.isArray(children)) {
+      elements = children;
     }
-  } else {
-    throw new Error("What is this?");
   }
 
   // Reconcile.
