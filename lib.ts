@@ -1,7 +1,7 @@
 import {
   findClosestComponent,
   findClosestDom,
-  insertDom,
+  createDom,
   removeDom,
   updateDom,
 } from "./dom";
@@ -291,7 +291,7 @@ const update = (node: RNode, element: RElement | null) => {
       } else if (expected.kind === NodeType.HOST) {
         const firstParentWithDom = findClosestDom(node);
         if (!firstParentWithDom.dom) {
-          throw new Error("Missing DOM.");
+          throw new Error("Missing DOM parent.");
         }
 
         let nodeConstruction: any = {
@@ -301,17 +301,26 @@ const update = (node: RNode, element: RElement | null) => {
           parent: node,
           descendants: [],
         };
-        nodeConstruction.dom = insertDom(
-          firstParentWithDom.dom,
-          nodeConstruction,
-          expected
-        );
+
+        // TODO: find out how to put in correct place in DOM.
+
+        console.log("replace host", current, expected);
+        if (current.kind === NodeType.HOST) {
+          // Actually replace DOM.
+          const newDom = createDom(expected);
+          firstParentWithDom.dom.replaceChild(newDom, current.dom);
+          nodeConstruction.dom = current.dom;
+        } else {
+          console.log("rep");
+          nodeConstruction.dom = createDom(expected);
+          firstParentWithDom.dom.appendChild(nodeConstruction.dom);
+        }
 
         newNode = nodeConstruction;
       } else if (expected.kind === NodeType.TEXT) {
         const firstParentWithDom = findClosestDom(node);
         if (!firstParentWithDom.dom) {
-          throw new Error("Missing DOM.");
+          throw new Error("Missing DOM parent.");
         }
 
         let nodeConstruction: any = {
@@ -388,11 +397,8 @@ const update = (node: RNode, element: RElement | null) => {
           throw new Error("Missing DOM.");
         }
 
-        nodeConstruction.dom = insertDom(
-          firstParentWithDom.dom,
-          nodeConstruction,
-          expected
-        );
+        nodeConstruction.dom = createDom(expected);
+        firstParentWithDom.dom.appendChild(nodeConstruction.dom);
         newNode = nodeConstruction;
 
         // Handle useRef.
@@ -405,7 +411,6 @@ const update = (node: RNode, element: RElement | null) => {
           }
         }
       } else if (expected.kind === NodeType.TEXT) {
-        // TODO: add DOM
         let nodeConstruction: any = {
           kind: NodeType.TEXT,
           content: expected.content,
@@ -599,7 +604,6 @@ export const useState = <T>(
   }
 
   const hook = c.hooks[i];
-
   if (hook.type !== HookType.STATE) {
     throw new Error("Something went wrong.");
   }
@@ -677,13 +681,12 @@ export const useMemo = <T>(callback: () => T, dependencies: any[]): T => {
     }
   }
 
-  _hookIndex += 1;
-
-  const hook = _currentNode.hooks[_hookIndex - 1];
+  const hook = _currentNode.hooks[_hookIndex];
   if (hook.type !== HookType.MEMO) {
     throw new Error("Something went wrong.");
   }
 
+  _hookIndex += 1;
   return hook.memo;
 };
 

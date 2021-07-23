@@ -32,11 +32,7 @@ const createElement = (type: string) => {
   }
 };
 
-export const insertDom = (
-  parent: Node,
-  node: HostNode,
-  element: HostElement
-) => {
+export const createDom = (element: HostElement) => {
   const html = createElement(element.type);
 
   Object.entries(element.props).forEach(([key, value]) => {
@@ -53,7 +49,6 @@ export const insertDom = (
     }
   });
 
-  parent.appendChild(html);
   return html;
 };
 
