@@ -189,6 +189,17 @@ describe("createElement", () => {
       expect(result).toStrictEqual(expected);
     });
 
+    it("works with empty children", () => {
+      const result = c("input", {});
+      const expected = {
+        type: "input",
+        props: {
+          children: [],
+        },
+      };
+      expect(result).toStrictEqual(expected);
+    });
+
     it("", () => {
       // TODO add fragments.
       // // <><div>a</div><div>b</div></>

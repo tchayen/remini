@@ -136,18 +136,9 @@ export function createElement(
   props: Props,
   ...children: any
 ): RElement {
-  let normalizedChildren;
-  if (children.length === 1 && typeof children[0] === "string") {
-    normalizedChildren = children;
-  } else if (children.length === 0) {
-    normalizedChildren = null;
-  } else {
-    normalizedChildren = children.flat();
-  }
-
   return {
     type: component,
-    props: { ...(props || {}), children: normalizedChildren },
+    props: { ...(props || {}), children: children.flat() },
   };
 }
 
@@ -194,9 +185,7 @@ const update = (node: RNode, element: RElement | null) => {
       contextValues.set(node.context, { value: node.props.value });
     }
 
-    const { children } = element.props;
-
-    elements = children;
+    elements = element.props.children;
   }
 
   // Reconcile.
@@ -605,7 +594,11 @@ export const createContext = <T>(): Context<T> => {
   const Provider = <T>({ children, value }: ProviderProps<T>): RElement => {
     return {
       type: SPECIAL_TYPES.PROVIDER,
-      props: { value, children, context },
+      props: {
+        value,
+        children: Array.isArray(children) ? children : [children],
+        context,
+      },
     };
   };
 
