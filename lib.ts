@@ -279,20 +279,35 @@ const update = (node: RNode, element: RElement | null) => {
     } else if (current && expected) {
       // REPLACE
       let newNode: RNode;
-      if (expected.kind === NodeType.NULL) {
+      if (expected.kind === NodeType.COMPONENT) {
         newNode = {
-          kind: NodeType.NULL,
-          type: null,
-          parent: node,
-        };
-      } else if (expected.kind === NodeType.PROVIDER) {
-        newNode = {
-          kind: NodeType.PROVIDER,
-          context: expected.props.context,
+          kind: NodeType.COMPONENT,
           props: expected.props,
+          type: expected.type,
+          parent: node,
+          descendants: [],
+          hooks: [],
+        };
+      } else if (expected.kind === NodeType.HOST) {
+        const firstParentWithDom = findClosestDom(node);
+        if (!firstParentWithDom.dom) {
+          throw new Error("Missing DOM.");
+        }
+
+        let nodeConstruction: any = {
+          kind: NodeType.HOST,
+          props: expected.props,
+          type: expected.type,
           parent: node,
           descendants: [],
         };
+        nodeConstruction.dom = insertDom(
+          firstParentWithDom.dom,
+          nodeConstruction,
+          expected
+        );
+
+        newNode = nodeConstruction;
       } else if (expected.kind === NodeType.TEXT) {
         const firstParentWithDom = findClosestDom(node);
         if (!firstParentWithDom.dom) {
@@ -314,34 +329,19 @@ const update = (node: RNode, element: RElement | null) => {
         }
 
         newNode = nodeConstruction;
-      } else if (expected.kind === NodeType.HOST) {
-        const firstParentWithDom = findClosestDom(node);
-        if (!firstParentWithDom.dom) {
-          throw new Error("Missing DOM.");
-        }
-
-        let nodeConstruction: any = {
-          kind: NodeType.HOST,
+      } else if (expected.kind === NodeType.PROVIDER) {
+        newNode = {
+          kind: NodeType.PROVIDER,
+          context: expected.props.context,
           props: expected.props,
-          type: expected.type,
           parent: node,
           descendants: [],
         };
-        nodeConstruction.dom = insertDom(
-          firstParentWithDom.dom,
-          nodeConstruction,
-          expected
-        );
-
-        newNode = nodeConstruction;
-      } else if (expected.kind === NodeType.COMPONENT) {
+      } else if (expected.kind === NodeType.NULL) {
         newNode = {
-          kind: NodeType.COMPONENT,
-          props: expected.props,
-          type: expected.type,
+          kind: NodeType.NULL,
+          type: null,
           parent: node,
-          descendants: [],
-          hooks: [],
         };
       } else {
         throw new Error("Couldn't resolve node kind.");
@@ -366,36 +366,14 @@ const update = (node: RNode, element: RElement | null) => {
     } else if (!current && expected !== undefined) {
       // ADD
       let newNode: RNode;
-      if (expected.kind === NodeType.NULL) {
+      if (expected.kind === NodeType.COMPONENT) {
         newNode = {
-          kind: NodeType.NULL,
-          type: null,
-          parent: node,
-        };
-      } else if (expected.kind === NodeType.TEXT) {
-        // TODO: add DOM
-        let nodeConstruction: any = {
-          kind: NodeType.TEXT,
-          content: expected.content,
-          parent: node,
-        };
-
-        const firstParentWithDom = findClosestDom(node);
-        if (!firstParentWithDom.dom) {
-          throw new Error("Missing DOM.");
-        }
-
-        const dom = document.createTextNode(expected.content);
-        firstParentWithDom.dom.appendChild(dom);
-        nodeConstruction.dom = dom;
-        newNode = nodeConstruction;
-      } else if (expected.kind === NodeType.PROVIDER) {
-        newNode = {
-          kind: NodeType.PROVIDER,
+          kind: NodeType.COMPONENT,
           props: expected.props,
+          type: expected.type,
           parent: node,
           descendants: [],
-          context: expected.props.context,
+          hooks: [],
         };
       } else if (expected.kind === NodeType.HOST) {
         let nodeConstruction: any = {
@@ -426,14 +404,36 @@ const update = (node: RNode, element: RElement | null) => {
             }
           }
         }
-      } else if (expected.kind === NodeType.COMPONENT) {
+      } else if (expected.kind === NodeType.TEXT) {
+        // TODO: add DOM
+        let nodeConstruction: any = {
+          kind: NodeType.TEXT,
+          content: expected.content,
+          parent: node,
+        };
+
+        const firstParentWithDom = findClosestDom(node);
+        if (!firstParentWithDom.dom) {
+          throw new Error("Missing DOM.");
+        }
+
+        const dom = document.createTextNode(expected.content);
+        firstParentWithDom.dom.appendChild(dom);
+        nodeConstruction.dom = dom;
+        newNode = nodeConstruction;
+      } else if (expected.kind === NodeType.PROVIDER) {
         newNode = {
-          kind: NodeType.COMPONENT,
+          kind: NodeType.PROVIDER,
           props: expected.props,
-          type: expected.type,
           parent: node,
           descendants: [],
-          hooks: [],
+          context: expected.props.context,
+        };
+      } else if (expected.kind === NodeType.NULL) {
+        newNode = {
+          kind: NodeType.NULL,
+          type: null,
+          parent: node,
         };
       } else {
         throw new Error("Couldn't resolve node kind.");
@@ -445,19 +445,7 @@ const update = (node: RNode, element: RElement | null) => {
       // REMOVE
       const indexOfCurrent = node.descendants.indexOf(current);
 
-      if (current.kind === NodeType.PROVIDER) {
-        return;
-      }
-
-      if (current.type === null) {
-        return;
-      }
-
-      if (current.kind === NodeType.HOST) {
-        removeDom(current);
-      } else if (current.kind === NodeType.TEXT) {
-        // current.dom.parentNode?.removeChild(current.dom);
-      } else if (current.kind === NodeType.COMPONENT) {
+      if (current.kind === NodeType.COMPONENT) {
         current.hooks.forEach((hook) => {
           if (hook.type === HookType.EFFECT && hook.cleanup) {
             hook.cleanup();
@@ -469,6 +457,14 @@ const update = (node: RNode, element: RElement | null) => {
         if (child && child.kind === NodeType.HOST) {
           removeDom(findClosestDom(child));
         }
+      } else if (current.kind === NodeType.HOST) {
+        removeDom(current);
+      } else if (current.kind === NodeType.TEXT) {
+        current.dom.parentNode?.removeChild(current.dom);
+      } else if (current.kind === NodeType.PROVIDER) {
+        return;
+      } else if (current.kind === NodeType.NULL) {
+        return;
       }
 
       if (expected === null) {
