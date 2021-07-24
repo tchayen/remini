@@ -302,16 +302,15 @@ const update = (node: RNode, element: RElement | null) => {
           descendants: [],
         };
 
-        // TODO: find out how to put in correct place in DOM.
-
-        console.log("replace host", current, expected);
         if (current.kind === NodeType.HOST) {
-          // Actually replace DOM.
           const newDom = createDom(expected);
           firstParentWithDom.dom.replaceChild(newDom, current.dom);
           nodeConstruction.dom = current.dom;
         } else {
-          console.log("rep");
+          // TODO:
+          // In case it is replacing null node, simply appending it to parent
+          // does not work as it is likely that it's not the last child. It
+          // needs a mechanism for finding out neighbouring nodes.
           nodeConstruction.dom = createDom(expected);
           firstParentWithDom.dom.appendChild(nodeConstruction.dom);
         }

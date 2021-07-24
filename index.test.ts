@@ -272,7 +272,7 @@ describe("createElement", () => {
     expect(result).toStrictEqual(expected);
   });
 
-  xit("", () => {
+  xit("works with fragments", () => {
     // TODO add fragments.
     // // <><div>a</div><div>b</div></>
     // c('', {}, c('div', {}, 'a'), c('div', {}, 'b'));
@@ -297,20 +297,12 @@ describe("render", () => {
 
     render(tree, root);
 
-    expect(_rootNode?.descendants[0].descendants).toHaveLength(2);
+    expect(document.body.innerHTML).toBe(
+      '<div><div><div><span>Counter: </span><span style="color: #ff0000">0</span></div><h1>Test</h1></div></div>'
+    );
   });
 
   it("works with state", () => {
-    const getPrintedNumber = () => {
-      const node =
-        _rootNode!.descendants[0].descendants[0].descendants[0].descendants[1];
-      if (node.type === null) {
-        throw new Error("Encountered null node.");
-      }
-
-      return node.props.children[0].content;
-    };
-
     let update = () => {};
 
     const root = document.createElement("div");
@@ -321,26 +313,25 @@ describe("render", () => {
 
       update = () => setValue(value + 1);
 
-      return c(
-        "div",
-        {},
-        c("span", {}, children),
-        c("span", { style: "color: #ff0000" }, `${value}`)
-      );
+      return c("div", {}, c("span", {}, children), c("span", {}, `${value}`));
     };
 
     const tree = c("div", {}, c(Counter, {}, "Counter: "), c("h1", {}, "Test"));
 
     render(tree, root);
 
-    expect(getPrintedNumber()).toBe("0");
+    expect(document.body.innerHTML).toBe(
+      "<div><div><div><span>Counter: </span><span>0</span></div><h1>Test</h1></div></div>"
+    );
 
     update();
 
-    expect(getPrintedNumber()).toBe("1");
+    expect(document.body.innerHTML).toBe(
+      "<div><div><div><span>Counter: </span><span>1</span></div><h1>Test</h1></div></div>"
+    );
   });
 
-  it("works with node replacing", () => {
+  it("works with host node replacing null node", () => {
     let update = () => {};
 
     const root = document.createElement("div");
@@ -364,22 +355,27 @@ describe("render", () => {
     const tree = c(Alter);
 
     render(tree, root);
-
-    expect(_rootNode!.descendants[0].descendants[0].descendants[0].type).toBe(
-      null
+    expect(document.body.innerHTML).toBe(
+      "<div><div><div>This is always here</div></div></div>"
     );
 
     update();
-
-    expect(_rootNode!.descendants[0].descendants[0].descendants[0].type).toBe(
-      "span"
+    expect(document.body.innerHTML).toBe(
+      "<div><div><span>Show</span><div>This is always here</div></div></div>"
     );
 
     update();
-
-    expect(_rootNode!.descendants[0].descendants[0].descendants[0].type).toBe(
-      null
+    expect(document.body.innerHTML).toBe(
+      "<div><div><div>This is always here</div></div></div>"
     );
+  });
+
+  xit("works with component replacing component", () => {
+    // TODO
+  });
+
+  xit("works with component replacing host node", () => {
+    // TODO
   });
 
   xit("works with node removal", () => {
