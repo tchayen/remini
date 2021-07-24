@@ -81,7 +81,6 @@ export type ProviderNode = ProviderElement & {
 
 export type NullElement = {
   kind: NodeType.NULL;
-  type: null;
 };
 
 export type NullNode = NullElement & {
@@ -281,9 +280,7 @@ const update = (node: RNode, element: RElement | null) => {
       let newNode: RNode;
       if (expected.kind === NodeType.COMPONENT) {
         newNode = {
-          kind: NodeType.COMPONENT,
-          props: expected.props,
-          type: expected.type,
+          ...expected,
           parent: node,
           descendants: [],
           hooks: [],
@@ -295,9 +292,7 @@ const update = (node: RNode, element: RElement | null) => {
         }
 
         let nodeConstruction: any = {
-          kind: NodeType.HOST,
-          props: expected.props,
-          type: expected.type,
+          ...expected,
           parent: node,
           descendants: [],
         };
@@ -339,16 +334,14 @@ const update = (node: RNode, element: RElement | null) => {
         newNode = nodeConstruction;
       } else if (expected.kind === NodeType.PROVIDER) {
         newNode = {
-          kind: NodeType.PROVIDER,
+          ...expected,
           context: expected.props.context,
-          props: expected.props,
           parent: node,
           descendants: [],
         };
       } else if (expected.kind === NodeType.NULL) {
         newNode = {
           kind: NodeType.NULL,
-          type: null,
           parent: node,
         };
       } else {
@@ -376,18 +369,14 @@ const update = (node: RNode, element: RElement | null) => {
       let newNode: RNode;
       if (expected.kind === NodeType.COMPONENT) {
         newNode = {
-          kind: NodeType.COMPONENT,
-          props: expected.props,
-          type: expected.type,
+          ...expected,
           parent: node,
           descendants: [],
           hooks: [],
         };
       } else if (expected.kind === NodeType.HOST) {
         let nodeConstruction: any = {
-          kind: NodeType.HOST,
-          props: expected.props,
-          type: expected.type,
+          ...expected,
           parent: node,
           descendants: [],
         };
@@ -411,8 +400,7 @@ const update = (node: RNode, element: RElement | null) => {
         }
       } else if (expected.kind === NodeType.TEXT) {
         let nodeConstruction: any = {
-          kind: NodeType.TEXT,
-          content: expected.content,
+          ...expected,
           parent: node,
         };
 
@@ -427,8 +415,7 @@ const update = (node: RNode, element: RElement | null) => {
         newNode = nodeConstruction;
       } else if (expected.kind === NodeType.PROVIDER) {
         newNode = {
-          kind: NodeType.PROVIDER,
-          props: expected.props,
+          ...expected,
           parent: node,
           descendants: [],
           context: expected.props.context,
@@ -436,7 +423,6 @@ const update = (node: RNode, element: RElement | null) => {
       } else if (expected.kind === NodeType.NULL) {
         newNode = {
           kind: NodeType.NULL,
-          type: null,
           parent: node,
         };
       } else {
@@ -474,7 +460,6 @@ const update = (node: RNode, element: RElement | null) => {
       if (expected === null) {
         const newNode: RNode = {
           kind: NodeType.NULL,
-          type: null,
           parent: node,
         };
 
