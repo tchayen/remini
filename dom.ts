@@ -33,7 +33,7 @@ const createElement = (type: string) => {
 };
 
 export const createDom = (element: HostElement) => {
-  const html = createElement(element.type);
+  const html = createElement(element.tag);
 
   Object.entries(element.props).forEach(([key, value]) => {
     if (key === "children") {

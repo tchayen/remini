@@ -2,8 +2,8 @@ import {
   findClosestComponent,
   findClosestDom,
   createDom,
-  removeDom,
   updateDom,
+  removeDom,
 } from "./dom";
 
 type Children = RElement[] | string | null;
@@ -36,7 +36,7 @@ export enum NodeType {
 
 export type ComponentElement = {
   kind: NodeType.COMPONENT;
-  type: RenderFunction;
+  render: RenderFunction;
   props: ElementProps;
 };
 
@@ -48,7 +48,7 @@ export type ComponentNode = ComponentElement & {
 
 export type HostElement = {
   kind: NodeType.HOST;
-  type: string;
+  tag: string;
   props: ElementProps;
 };
 
@@ -171,13 +171,13 @@ export function createElement(
   if (typeof component === "function") {
     return {
       kind: NodeType.COMPONENT,
-      type: component,
+      render: component,
       props: p,
     };
   } else if (typeof component === "string") {
     return {
       kind: NodeType.HOST,
-      type: component,
+      tag: component,
       props: p,
     };
   } else if (component === SPECIAL_TYPES.PROVIDER) {
@@ -214,7 +214,7 @@ const update = (node: RNode, element: RElement | null) => {
     _hookIndex = 0;
     // This will be always one element array because this implementation doesn't
     // support returning arrays from render functions.
-    elements = [node.type(node.props)];
+    elements = [node.render(node.props)];
     _hookIndex = 0;
   } else if (node.kind === NodeType.NULL) {
     return;
@@ -249,10 +249,10 @@ const update = (node: RNode, element: RElement | null) => {
       expected &&
       ((current.kind === NodeType.COMPONENT &&
         expected.kind === NodeType.COMPONENT &&
-        current.type === expected.type) ||
+        current.render === expected.render) ||
         (current.kind === NodeType.HOST &&
           expected.kind === NodeType.HOST &&
-          current.type === expected.type) ||
+          current.tag === expected.tag) ||
         (current.kind === NodeType.PROVIDER &&
           expected.kind === NodeType.PROVIDER) ||
         (current.kind === NodeType.TEXT && expected.kind === NodeType.TEXT))
@@ -726,7 +726,7 @@ export const render = (element: RElement, container: HTMLElement) => {
     props: {
       children: [element],
     },
-    type: container.tagName.toLowerCase(),
+    tag: container.tagName.toLowerCase(),
     dom: container,
     parent: null,
     descendants: [],

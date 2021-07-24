@@ -2,6 +2,7 @@ import {
   createContext,
   createElement as c,
   NodeType,
+  RElement,
   render,
   useContext,
   useEffect,
@@ -21,14 +22,14 @@ describe("createElement", () => {
   it("works for simple HTML", () => {
     const result = c("button", {}, c("strong", {}, "Hello world"));
 
-    const expected = {
-      type: "button",
+    const expected: RElement = {
+      tag: "button",
       kind: NodeType.HOST,
       props: {
         children: [
           {
             kind: NodeType.HOST,
-            type: "strong",
+            tag: "strong",
             props: {
               children: [
                 {
@@ -48,9 +49,9 @@ describe("createElement", () => {
   it("works with props", () => {
     const tree = c("a", { href: "https://google.com" }, "Google");
 
-    const expected = {
+    const expected: RElement = {
       kind: NodeType.HOST,
-      type: "a",
+      tag: "a",
       props: {
         href: "https://google.com",
         children: [
@@ -77,14 +78,14 @@ describe("createElement", () => {
       c("span", {}, "Text")
     );
 
-    const expected = {
+    const expected: RElement = {
       kind: NodeType.HOST,
-      type: "div",
+      tag: "div",
       props: {
         children: [
           {
             kind: NodeType.COMPONENT,
-            type: Title,
+            render: Title,
             props: {
               children: [
                 {
@@ -96,7 +97,7 @@ describe("createElement", () => {
           },
           {
             kind: NodeType.HOST,
-            type: "span",
+            tag: "span",
             props: {
               children: [
                 {
@@ -123,14 +124,14 @@ describe("createElement", () => {
       c("span", {}, "Text"),
     ]);
 
-    const expected = {
+    const expected: RElement = {
       kind: NodeType.HOST,
-      type: "div",
+      tag: "div",
       props: {
         children: [
           {
             kind: NodeType.COMPONENT,
-            type: Title,
+            render: Title,
             props: {
               children: [
                 {
@@ -142,7 +143,7 @@ describe("createElement", () => {
           },
           {
             kind: NodeType.HOST,
-            type: "span",
+            tag: "span",
             props: {
               children: [
                 {
@@ -162,9 +163,9 @@ describe("createElement", () => {
   it("works with text node as a sibling of host node", () => {
     // <div>Contact: <span>mail</span></div>
     const result = c("div", {}, "Contact: ", c("span", {}, "mail"));
-    const expected = {
+    const expected: RElement = {
       kind: NodeType.HOST,
-      type: "div",
+      tag: "div",
       props: {
         children: [
           {
@@ -173,7 +174,7 @@ describe("createElement", () => {
           },
           {
             kind: NodeType.HOST,
-            type: "span",
+            tag: "span",
             props: {
               children: [
                 {
@@ -197,14 +198,14 @@ describe("createElement", () => {
       {},
       items.map((item) => c("span", {}, item))
     );
-    const expected = {
+    const expected: RElement = {
       kind: NodeType.HOST,
-      type: "div",
+      tag: "div",
       props: {
         children: [
           {
             kind: NodeType.HOST,
-            type: "span",
+            tag: "span",
             props: {
               children: [
                 {
@@ -216,7 +217,7 @@ describe("createElement", () => {
           },
           {
             kind: NodeType.HOST,
-            type: "span",
+            tag: "span",
             props: {
               children: [
                 {
@@ -234,9 +235,9 @@ describe("createElement", () => {
 
   it("works with null nodes", () => {
     const result = c("div", {}, null, c("span", {}, "Text"));
-    const expected = {
+    const expected: RElement = {
       kind: NodeType.HOST,
-      type: "div",
+      tag: "div",
       props: {
         children: [
           {
@@ -244,7 +245,7 @@ describe("createElement", () => {
           },
           {
             kind: NodeType.HOST,
-            type: "span",
+            tag: "span",
             props: {
               children: [
                 {
@@ -262,9 +263,9 @@ describe("createElement", () => {
 
   it("works with empty children", () => {
     const result = c("input", {});
-    const expected = {
+    const expected: RElement = {
       kind: NodeType.HOST,
-      type: "input",
+      tag: "input",
       props: {
         children: [],
       },
