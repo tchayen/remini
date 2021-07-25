@@ -233,34 +233,6 @@ describe("createElement", () => {
     expect(result).toStrictEqual(expected);
   });
 
-  it("works with null nodes", () => {
-    const result = c("div", {}, null, c("span", {}, "Text"));
-    const expected: RElement = {
-      kind: NodeType.HOST,
-      tag: "div",
-      props: {
-        children: [
-          {
-            kind: NodeType.NULL,
-          },
-          {
-            kind: NodeType.HOST,
-            tag: "span",
-            props: {
-              children: [
-                {
-                  kind: NodeType.TEXT,
-                  content: "Text",
-                },
-              ],
-            },
-          },
-        ],
-      },
-    };
-    expect(result).toStrictEqual(expected);
-  });
-
   it("works with empty children", () => {
     const result = c("input", {});
     const expected: RElement = {
@@ -332,7 +304,7 @@ describe("render", () => {
     );
   });
 
-  it("works with host node replacing null node", () => {
+  it("works with replacing nodes", () => {
     let update = () => {};
 
     const root = document.createElement("div");

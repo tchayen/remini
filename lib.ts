@@ -79,27 +79,13 @@ export type ProviderNode = ProviderElement & {
   descendants: RNode[];
 };
 
-export type NullElement = {
-  kind: NodeType.NULL;
-};
-
-export type NullNode = NullElement & {
-  parent: RNode | null;
-};
-
 export type RElement =
   | ComponentElement
   | HostElement
   | TextElement
-  | ProviderElement
-  | NullElement;
+  | ProviderElement;
 
-export type RNode =
-  | ComponentNode
-  | HostNode
-  | TextNode
-  | ProviderNode
-  | NullNode;
+export type RNode = ComponentNode | HostNode | TextNode | ProviderNode;
 
 enum HookType {
   STATE = 1,
@@ -152,20 +138,19 @@ export function createElement(
 ): RElement {
   const p = {
     ...(props || {}),
-    children: children.flat().map((child: RElement | string | null) => {
-      if (typeof child === "string") {
-        return {
-          kind: NodeType.TEXT,
-          content: child,
-        };
-      } else if (child === null) {
-        return {
-          kind: NodeType.NULL,
-        };
-      } else {
-        return child;
-      }
-    }),
+    children: children
+      .flat()
+      .map((child: RElement | string | null) => {
+        if (typeof child === "string") {
+          return {
+            kind: NodeType.TEXT,
+            content: child,
+          };
+        } else {
+          return child;
+        }
+      })
+      .filter(Boolean),
   };
 
   if (typeof component === "function") {
@@ -216,8 +201,6 @@ const update = (node: RNode, element: RElement | null) => {
     // support returning arrays from render functions.
     elements = [node.render(node.props)];
     _hookIndex = 0;
-  } else if (node.kind === NodeType.NULL) {
-    return;
   } else if (
     element &&
     "props" in element &&
@@ -300,14 +283,7 @@ const update = (node: RNode, element: RElement | null) => {
         if (current.kind === NodeType.HOST) {
           const newDom = createDom(expected);
           firstParentWithDom.dom.replaceChild(newDom, current.dom);
-          nodeConstruction.dom = current.dom;
-        } else {
-          // TODO:
-          // In case it is replacing null node, simply appending it to parent
-          // does not work as it is likely that it's not the last child. It
-          // needs a mechanism for finding out neighbouring nodes.
-          nodeConstruction.dom = createDom(expected);
-          firstParentWithDom.dom.appendChild(nodeConstruction.dom);
+          nodeConstruction.dom = newDom;
         }
 
         newNode = nodeConstruction;
@@ -338,11 +314,6 @@ const update = (node: RNode, element: RElement | null) => {
           context: expected.props.context,
           parent: node,
           descendants: [],
-        };
-      } else if (expected.kind === NodeType.NULL) {
-        newNode = {
-          kind: NodeType.NULL,
-          parent: node,
         };
       } else {
         throw new Error("Couldn't resolve node kind.");
@@ -406,7 +377,7 @@ const update = (node: RNode, element: RElement | null) => {
 
         const firstParentWithDom = findClosestDom(node);
         if (!firstParentWithDom.dom) {
-          throw new Error("Missing DOM.");
+          throw new Error("Missing DOM parent.");
         }
 
         const dom = document.createTextNode(expected.content);
@@ -419,11 +390,6 @@ const update = (node: RNode, element: RElement | null) => {
           parent: node,
           descendants: [],
           context: expected.props.context,
-        };
-      } else if (expected.kind === NodeType.NULL) {
-        newNode = {
-          kind: NodeType.NULL,
-          parent: node,
         };
       } else {
         throw new Error("Couldn't resolve node kind.");
@@ -453,20 +419,9 @@ const update = (node: RNode, element: RElement | null) => {
         current.dom.parentNode?.removeChild(current.dom);
       } else if (current.kind === NodeType.PROVIDER) {
         return;
-      } else if (current.kind === NodeType.NULL) {
-        return;
       }
 
-      if (expected === null) {
-        const newNode: RNode = {
-          kind: NodeType.NULL,
-          parent: node,
-        };
-
-        node.descendants[indexOfCurrent] = newNode;
-      } else {
-        node.descendants.splice(indexOfCurrent, 1);
-      }
+      node.descendants.splice(indexOfCurrent, 1);
     }
   });
 
