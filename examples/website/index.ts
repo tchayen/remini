@@ -84,6 +84,7 @@ const Page = () => {
           { class: "divide-y" },
           c(PlaceholderPost),
           c(PlaceholderPost),
+          c(PlaceholderPost),
           c(PlaceholderPost)
         )
       : c(

@@ -32,7 +32,9 @@ const createElement = (type: string) => {
   }
 };
 
-export const createDom = (element: HostElement) => {
+export const createDom = (
+  element: HostElement
+): HTMLElement | SVGGraphicsElement => {
   const html = createElement(element.tag);
 
   Object.entries(element.props).forEach(([key, value]) => {
@@ -53,7 +55,7 @@ export const createDom = (element: HostElement) => {
 };
 
 // Update two DOM nodes of the same HTML tag.
-export const updateDom = (current: HostNode, expected: HostElement) => {
+export const updateDom = (current: HostNode, expected: HostElement): void => {
   const html = current.dom as HTMLElement;
 
   Object.keys(current.props).forEach((key) => {
@@ -104,7 +106,7 @@ export const updateDom = (current: HostNode, expected: HostElement) => {
   });
 };
 
-export const removeDom = (node: HostNode) => {
+export const removeDom = (node: HostNode): void => {
   if (node.kind !== NodeType.HOST) {
     throw new Error("Tried to remove incorrect node.");
   }

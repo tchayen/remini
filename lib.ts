@@ -15,7 +15,7 @@ type ElementProps = {
 
 type Props = {
   [key: string]: any;
-  style?: object | string;
+  style?: Record<string, unknown> | string;
 };
 
 export type RenderFunction = (props: Props) => RElement;
@@ -181,8 +181,8 @@ let _hookIndex = 0;
 const contextValues: Map<Context<any>, any> = new Map();
 
 const update = (node: RNode, element: RElement | null) => {
-  let previousNode = _currentNode;
-  let previousIndex = _hookIndex;
+  const previousNode = _currentNode;
+  const previousIndex = _hookIndex;
 
   let replacedContext = null;
 
@@ -278,7 +278,7 @@ const update = (node: RNode, element: RElement | null) => {
           throw new Error("Missing DOM parent.");
         }
 
-        let nodeConstruction: any = {
+        const nodeConstruction: any = {
           ...expected,
           parent: node,
           descendants: [],
@@ -299,7 +299,7 @@ const update = (node: RNode, element: RElement | null) => {
           throw new Error("Missing DOM parent.");
         }
 
-        let nodeConstruction: any = {
+        const nodeConstruction: any = {
           ...expected,
           parent: node,
         };
@@ -359,7 +359,7 @@ const update = (node: RNode, element: RElement | null) => {
           hooks: [],
         };
       } else if (expected.kind === NodeType.HOST) {
-        let nodeConstruction: any = {
+        const nodeConstruction: any = {
           ...expected,
           parent: node,
           descendants: [],
@@ -383,7 +383,7 @@ const update = (node: RNode, element: RElement | null) => {
           }
         }
       } else if (expected.kind === NodeType.TEXT) {
-        let nodeConstruction: any = {
+        const nodeConstruction: any = {
           ...expected,
           parent: node,
         };
@@ -450,8 +450,8 @@ const update = (node: RNode, element: RElement | null) => {
 
 type Job = { node: RNode; element: RElement | null };
 let updating = false;
-let tasks: Job[] = [];
-let effects: (() => void)[] = [];
+const tasks: Job[] = [];
+const effects: (() => void)[] = [];
 
 const runUpdateLoop = (node: RNode, element: RElement | null) => {
   tasks.push({ node, element });
@@ -480,10 +480,10 @@ const runUpdateLoop = (node: RNode, element: RElement | null) => {
 export const useEffect = (
   callback: () => void | (() => void),
   dependencies?: any[]
-) => {
+): void => {
   // Capture the current node.
-  let c = _currentNode;
-  let i = _hookIndex;
+  const c = _currentNode;
+  const i = _hookIndex;
 
   if (!c || c.kind !== NodeType.COMPONENT) {
     throw new Error("Executing useEffect for non-function element.");
@@ -544,8 +544,8 @@ export const useState = <T>(
   initial: T
 ): [T, (next: T | ((current: T) => T)) => void] => {
   // Capture the current node.
-  let c = _currentNode;
-  let i = _hookIndex;
+  const c = _currentNode;
+  const i = _hookIndex;
 
   if (!c || c.kind !== NodeType.COMPONENT) {
     throw new Error("Executing useState for non-function element.");
@@ -649,8 +649,7 @@ type Context<T> = {
 };
 
 export const createContext = <T>(): Context<T> => {
-  // @ts-ignore
-  const context: Context<T> = {};
+  const context: any = {};
 
   const Provider = <T>({ children, value }: ProviderProps<T>): RElement => {
     return createElement(SPECIAL_TYPES.PROVIDER, { value, context }, children);
@@ -688,7 +687,7 @@ export const useContext = <T>(context: Context<T>): T => {
 
 export let _rootNode: HostNode | null = null;
 
-export const render = (element: RElement, container: HTMLElement) => {
+export const render = (element: RElement, container: HTMLElement): void => {
   _rootNode = {
     kind: NodeType.HOST,
     props: {
