@@ -527,6 +527,11 @@ describe("useEffect", () => {
     );
   });
 
+  it("works with comparing deps array", () => {
+    // TODO: trigger a change and make sure it doesn't trigger useEffect if
+    //should not be changed.
+  });
+
   it("works with callback", () => {
     const root = document.createElement("div");
     document.body.appendChild(root);
@@ -556,8 +561,41 @@ describe("useEffect", () => {
     expect(document.body.innerHTML).toBe("<div><div></div></div>");
   });
 
-  xit("works with two different effects in a component", () => {
-    // TODO
+  it("works with two different effects in a component", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const Advanced = ({ enforceCount }: { enforceCount: number }) => {
+      const [count, setCount] = useState(0);
+      useEffect(() => {
+        setCount(10);
+      }, []);
+
+      useEffect(() => {
+        setCount(enforceCount);
+      }, [enforceCount]);
+
+      return c("div", {}, `${count}`);
+    };
+
+    const App = () => {
+      const [enforceCount, setCount] = useState(5);
+      useEffect(() => {
+        setTimeout(() => {
+          setCount(7);
+        }, 1000);
+      }, []);
+
+      return c("div", {}, c(Advanced, { enforceCount }));
+    };
+
+    const tree = c(App);
+    render(tree, root);
+
+    expect(document.body.innerHTML).toBe("<div><div><div>5</div></div></div>");
+
+    jest.runOnlyPendingTimers();
+    expect(document.body.innerHTML).toBe("<div><div><div>7</div></div></div>");
   });
 
   it("does not work outside component", () => {
@@ -1017,7 +1055,7 @@ describe("DOM", () => {
     );
   });
 
-  it("has DOM removed when component that has non-host node as first child is detached", () => {
+  it("works with removing DOM node when component that has non-host node as first child is detached", () => {
     const root = document.createElement("div");
     document.body.appendChild(root);
 
@@ -1057,11 +1095,166 @@ describe("DOM", () => {
     expect(document.body.innerHTML).toBe("<div><div>test</div></div>");
   });
 
-  xit("has text nodes updated", () => {
-    // TODO
+  it("has text removed when replaced", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const Other = () => {
+      return c("h1", {}, "Other");
+    };
+
+    const App = () => {
+      const [show, setShow] = useState(true);
+
+      useEffect(() => {
+        setTimeout(() => {
+          setShow(false);
+        }, 500);
+      }, []);
+
+      return c("div", {}, show ? "test" : c(Other));
+    };
+
+    const tree = c(App);
+    render(tree, root);
+
+    expect(document.body.innerHTML).toBe("<div><div>test</div></div>");
+
+    jest.runOnlyPendingTimers();
+
+    expect(document.body.innerHTML).toBe(
+      "<div><div><h1>Other</h1></div></div>"
+    );
   });
 
-  xit("has text nodes removed", () => {
-    // TODO
+  it("has provider's children removed when replaced", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const UserContext = createContext<{ name: string }>();
+
+    const Consumer = () => {
+      const user = useContext(UserContext);
+
+      return c("span", {}, user.name);
+    };
+
+    const App = () => {
+      const [show, setShow] = useState(true);
+
+      useEffect(() => {
+        setTimeout(() => {
+          setShow(false);
+        }, 500);
+      }, []);
+
+      return c(
+        "div",
+        {},
+        show
+          ? c(UserContext.Provider, { value: { name: "John" } }, c(Consumer))
+          : "test"
+      );
+    };
+
+    const tree = c(App);
+    render(tree, root);
+
+    expect(document.body.innerHTML).toBe(
+      "<div><div><span>John</span></div></div>"
+    );
+
+    jest.runOnlyPendingTimers();
+
+    expect(document.body.innerHTML).toBe("<div><div>test</div></div>");
+  });
+
+  it("has text replaced with text", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const App = () => {
+      const [show, setShow] = useState(true);
+
+      useEffect(() => {
+        setTimeout(() => {
+          setShow(false);
+        }, 500);
+      }, []);
+
+      return c("div", {}, show ? "a" : "b");
+    };
+
+    const tree = c(App);
+    render(tree, root);
+
+    expect(document.body.innerHTML).toBe("<div><div>a</div></div>");
+
+    jest.runOnlyPendingTimers();
+
+    expect(document.body.innerHTML).toBe("<div><div>b</div></div>");
+  });
+
+  it("has text replaced with host node", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const App = () => {
+      const [show, setShow] = useState(true);
+
+      useEffect(() => {
+        setTimeout(() => {
+          setShow(false);
+        }, 500);
+      }, []);
+
+      return c("div", {}, show ? "a" : c("span", {}, "b"));
+    };
+
+    const tree = c(App);
+    render(tree, root);
+
+    expect(document.body.innerHTML).toBe("<div><div>a</div></div>");
+
+    jest.runOnlyPendingTimers();
+
+    expect(document.body.innerHTML).toBe(
+      "<div><div><span>b</span></div></div>"
+    );
+  });
+
+  it("has hooks triggered on cleanup when replacing component", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+    const mock = jest.fn();
+
+    const Cleanup = () => {
+      useEffect(() => {
+        return () => {
+          mock();
+        };
+      }, []);
+
+      return c("div", {}, "a");
+    };
+
+    const App = () => {
+      const [show, setShow] = useState(true);
+
+      useEffect(() => {
+        setTimeout(() => {
+          setShow(false);
+        }, 500);
+      }, []);
+
+      return c("div", {}, show ? c(Cleanup) : "b");
+    };
+
+    const tree = c(App);
+    render(tree, root);
+
+    jest.runOnlyPendingTimers();
+
+    expect(mock).toHaveBeenCalledTimes(1);
   });
 });
