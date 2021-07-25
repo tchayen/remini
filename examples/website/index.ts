@@ -78,6 +78,15 @@ const Page = () => {
   return c(
     "div",
     { class: "mx-auto border-l border-r", style: { width: "600px" } },
+    c(
+      "div",
+      { class: "border-b border-gray-200 p-4 flex" },
+      c("div", { class: "rounded-full bg-gray-400 h-12 w-12" }),
+      c("Input", {
+        class: "text-xl ml-3 focus:outline-none",
+        placeholder: "What's happening?",
+      })
+    ),
     loading
       ? c(
           "div",
