@@ -442,7 +442,7 @@ describe("useState", () => {
 
   it("does not work outside component", () => {
     expect(() => {
-      const [] = useState(0);
+      const [state, setState] = useState(0);
     }).toThrowError("Executing useState for non-function element.");
   });
 });
