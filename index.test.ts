@@ -989,6 +989,47 @@ describe("DOM", () => {
     );
   });
 
+  it("works with inserting node between other nodes", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const Text = ({ children }: { children: string }) => {
+      return c("div", {}, children);
+    };
+
+    const App = () => {
+      const [loading, setLoading] = useState(true);
+
+      useEffect(() => {
+        setTimeout(() => {
+          setLoading(false);
+        }, 500);
+      }, []);
+
+      return c(
+        "div",
+        {},
+        c(Text, {}, "a"),
+        loading ? null : c("div", {}, "b"),
+        c(Text, {}, "c"),
+        c("div", {}, "d")
+      );
+    };
+
+    const tree = c(App);
+    render(tree, root);
+
+    expect(document.body.innerHTML).toBe(
+      "<div><div><div>a</div><div>c</div><div>d</div></div></div>"
+    );
+
+    jest.runOnlyPendingTimers();
+
+    expect(document.body.innerHTML).toBe(
+      "<div><div><div>a</div><div>b</div><div>c</div><div>d</div></div></div>"
+    );
+  });
+
   xit("has text nodes updated", () => {
     // TODO
   });

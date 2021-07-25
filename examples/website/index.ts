@@ -109,16 +109,6 @@ const LoginForm = () => {
         onSubmit,
         class: `w-96 relative mt-10 ${loading ? "opacity-60" : ""}`,
       },
-      loading
-        ? c(
-            "div",
-            {
-              class:
-                "w-full h-full flex justify-center items-center absolute inset-0",
-            },
-            c(Spinner)
-          )
-        : null,
       c("h1", { class: "text-xl font-bold mb-3 text-gray-700" }, "Sign in"),
       c(Label, { for: "email" }, "Email"),
       c(Input, {
@@ -148,7 +138,51 @@ const LoginForm = () => {
           { href: "https://example.org", class: "text-blue-500 ml-1" },
           "example.org"
         )
-      )
+      ),
+      loading
+        ? c(
+            "div",
+            {
+              class:
+                "w-full h-full flex justify-center items-center absolute inset-0",
+            },
+            c(Spinner)
+          )
+        : null
+    )
+  );
+};
+
+const Author = ({ author }: { author: string }) => {
+  const [show, setShow] = useState(false);
+
+  const onMouseOver = () => {
+    setShow(true);
+  };
+
+  const onMouseOut = () => {
+    setShow(false);
+  };
+
+  return c(
+    "div",
+    { class: "relative" },
+    show
+      ? c(
+          "div",
+          { class: "absolute top-4 bg-white p-3 rounded shadow" },
+          c("div", {}, author)
+        )
+      : null,
+    c(
+      "a",
+      {
+        class: "font-bold text-gray-700 hover:underline",
+        href: `/${author}`,
+        onMouseOver,
+        onMouseOut,
+      },
+      author
     )
   );
 };
@@ -166,11 +200,13 @@ const Post = ({ author, content, avatarColor }: PostData) => {
     c(
       "div",
       { class: "flex space-x-3" },
-      c("div", { class: `rounded-full ${avatarColor} h-12 w-12` }),
+      c("div", {
+        class: `rounded-full ${avatarColor} h-12 w-12`,
+      }),
       c(
         "div",
         { class: "flex-1" },
-        c("div", { class: "font-bold text-gray-700" }, author),
+        c(Author, { author }),
         c("div", {}, c("div", { class: "text-gray-500" }, content))
       )
     )
@@ -263,6 +299,8 @@ const Page = () => {
 
 const App = () => {
   const [token, setToken] = useState<string | null>(null);
+
+  console.log(token);
 
   return c(
     SessionContext.Provider,

@@ -268,6 +268,10 @@ const update = (node: RNode, element: RElement | null) => {
           descendants: [],
           hooks: [],
         };
+
+        if (current.kind === NodeType.HOST) {
+          removeDom(current);
+        }
       } else if (expected.kind === NodeType.HOST) {
         const firstParentWithDom = findClosestDom(node);
         if (!firstParentWithDom.dom) {
@@ -280,11 +284,13 @@ const update = (node: RNode, element: RElement | null) => {
           descendants: [],
         };
 
-        if (current.kind === NodeType.HOST) {
-          const newDom = createDom(expected);
+        const newDom = createDom(expected);
+        if (current.kind === NodeType.HOST || current.kind === NodeType.TEXT) {
           firstParentWithDom.dom.replaceChild(newDom, current.dom);
-          nodeConstruction.dom = newDom;
+        } else {
+          firstParentWithDom.dom.appendChild(newDom);
         }
+        nodeConstruction.dom = newDom;
 
         newNode = nodeConstruction;
       } else if (expected.kind === NodeType.TEXT) {
@@ -298,11 +304,14 @@ const update = (node: RNode, element: RElement | null) => {
           parent: node,
         };
 
+        const dom = document.createTextNode(expected.content);
         if (current.kind === NodeType.TEXT) {
           nodeConstruction.dom = current.dom;
           nodeConstruction.dom.nodeValue = expected.content;
+        } else if (current.kind === NodeType.HOST) {
+          firstParentWithDom.dom.replaceChild(dom, current.dom);
+          nodeConstruction.dom = dom;
         } else {
-          const dom = document.createTextNode(expected.content);
           firstParentWithDom.dom.appendChild(dom);
           nodeConstruction.dom = dom;
         }
@@ -315,6 +324,10 @@ const update = (node: RNode, element: RElement | null) => {
           parent: node,
           descendants: [],
         };
+
+        if (current.kind === NodeType.HOST) {
+          removeDom(current);
+        }
       } else {
         throw new Error("Couldn't resolve node kind.");
       }
