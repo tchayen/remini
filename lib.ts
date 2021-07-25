@@ -20,11 +20,7 @@ type Props = {
 
 export type RenderFunction = (props: Props) => RElement;
 
-export enum SPECIAL_TYPES {
-  PROVIDER = 1,
-}
-
-export type ComponentType = RenderFunction | SPECIAL_TYPES | string;
+export type ComponentType = RenderFunction | NodeType.PROVIDER | string;
 
 export enum NodeType {
   COMPONENT = 1,
@@ -154,6 +150,13 @@ export function createElement(
   };
 
   if (typeof component === "function") {
+    if (component.context) {
+      return {
+        kind: NodeType.PROVIDER,
+        props: { ...p, $$context: component.context },
+      };
+    }
+
     return {
       kind: NodeType.COMPONENT,
       render: component,
@@ -163,11 +166,6 @@ export function createElement(
     return {
       kind: NodeType.HOST,
       tag: component,
-      props: p,
-    };
-  } else if (component === SPECIAL_TYPES.PROVIDER) {
-    return {
-      kind: NodeType.PROVIDER,
       props: p,
     };
   }
@@ -312,7 +310,7 @@ const update = (node: RNode, element: RElement | null) => {
       } else if (expected.kind === NodeType.PROVIDER) {
         newNode = {
           ...expected,
-          context: expected.props.context,
+          context: expected.props.$$context,
           parent: node,
           descendants: [],
         };
@@ -378,7 +376,7 @@ const update = (node: RNode, element: RElement | null) => {
           ...expected,
           parent: node,
           descendants: [],
-          context: expected.props.context,
+          context: expected.props.$$context,
         };
       } else {
         throw new Error("Couldn't resolve node kind.");
@@ -396,6 +394,8 @@ const update = (node: RNode, element: RElement | null) => {
             hook.cleanup();
           }
         });
+      } else if (current.kind === NodeType.PROVIDER) {
+        contextValues.delete(current.context);
       }
 
       removeDom(current);
@@ -439,6 +439,7 @@ const runUpdateLoop = (node: RNode, element: RElement | null) => {
     }
   }
 
+  contextValues.clear();
   updating = false;
 };
 
@@ -617,8 +618,11 @@ export const createContext = <T>(): Context<T> => {
   const context: any = {};
 
   const Provider = <T>({ children, value }: ProviderProps<T>): RElement => {
-    return createElement(SPECIAL_TYPES.PROVIDER, { value, context }, children);
+    // Doesn't matter what is being returned here.
+    return createElement("a", {});
   };
+
+  Provider.context = context;
 
   context.Provider = Provider;
   return context;
