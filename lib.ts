@@ -298,8 +298,7 @@ const update = (node: RNode, element: RElement | null) => {
 
         const dom = document.createTextNode(expected.content);
         if (current.kind === NodeType.TEXT) {
-          nodeConstruction.dom = current.dom;
-          nodeConstruction.dom.nodeValue = expected.content;
+          throw new Error("Update should have happened on this node.");
         } else if (current.kind === NodeType.HOST) {
           firstParentWithDom.dom.replaceChild(dom, current.dom);
           nodeConstruction.dom = dom;

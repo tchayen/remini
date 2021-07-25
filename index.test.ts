@@ -1127,7 +1127,7 @@ describe("DOM", () => {
     );
   });
 
-  it("has provider's children removed when replaced", () => {
+  it("has a node cleaned up after being replaced by provider", () => {
     const root = document.createElement("div");
     document.body.appendChild(root);
 
@@ -1152,8 +1152,8 @@ describe("DOM", () => {
         "div",
         {},
         show
-          ? c(UserContext.Provider, { value: { name: "John" } }, c(Consumer))
-          : "test"
+          ? c("div", {}, c("span", {}, "a"))
+          : c(UserContext.Provider, { value: { name: "John" } }, c(Consumer))
       );
     };
 
@@ -1161,15 +1161,17 @@ describe("DOM", () => {
     render(tree, root);
 
     expect(document.body.innerHTML).toBe(
-      "<div><div><span>John</span></div></div>"
+      "<div><div><div><span>a</span></div></div></div>"
     );
 
     jest.runOnlyPendingTimers();
 
-    expect(document.body.innerHTML).toBe("<div><div>test</div></div>");
+    expect(document.body.innerHTML).toBe(
+      "<div><div><span>John</span></div></div>"
+    );
   });
 
-  it("has text replaced with text", () => {
+  it("has text updated with text", () => {
     const root = document.createElement("div");
     document.body.appendChild(root);
 
@@ -1195,7 +1197,7 @@ describe("DOM", () => {
     expect(document.body.innerHTML).toBe("<div><div>b</div></div>");
   });
 
-  it("has text replaced with host node", () => {
+  it("has host node replaced with text", () => {
     const root = document.createElement("div");
     document.body.appendChild(root);
 
@@ -1208,19 +1210,19 @@ describe("DOM", () => {
         }, 500);
       }, []);
 
-      return c("div", {}, show ? "a" : c("span", {}, "b"));
+      return c("div", {}, show ? c("span", {}, "a") : "b");
     };
 
     const tree = c(App);
     render(tree, root);
 
-    expect(document.body.innerHTML).toBe("<div><div>a</div></div>");
+    expect(document.body.innerHTML).toBe(
+      "<div><div><span>a</span></div></div>"
+    );
 
     jest.runOnlyPendingTimers();
 
-    expect(document.body.innerHTML).toBe(
-      "<div><div><span>b</span></div></div>"
-    );
+    expect(document.body.innerHTML).toBe("<div><div>b</div></div>");
   });
 
   it("has hooks triggered on cleanup when replacing component", () => {
