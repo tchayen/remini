@@ -272,9 +272,6 @@ const update = (node: RNode, element: RElement | null) => {
         removeDom(current);
       } else if (expected.kind === NodeType.HOST) {
         const firstParentWithDom = findClosestDom(node);
-        if (!firstParentWithDom.dom) {
-          throw new Error("Missing DOM parent.");
-        }
 
         const nodeConstruction: any = {
           ...expected,
@@ -294,10 +291,6 @@ const update = (node: RNode, element: RElement | null) => {
         newNode = nodeConstruction;
       } else if (expected.kind === NodeType.TEXT) {
         const firstParentWithDom = findClosestDom(node);
-        if (!firstParentWithDom.dom) {
-          throw new Error("Missing DOM parent.");
-        }
-
         const nodeConstruction: any = {
           ...expected,
           parent: node,
@@ -336,12 +329,6 @@ const update = (node: RNode, element: RElement | null) => {
             hook.cleanup();
           }
         });
-
-        for (const child of current.descendants) {
-          if (child.kind === NodeType.HOST) {
-            removeDom(findClosestDom(child));
-          }
-        }
       }
 
       node.descendants[node.descendants.indexOf(current)] = newNode;
@@ -363,10 +350,6 @@ const update = (node: RNode, element: RElement | null) => {
           descendants: [],
         };
         const firstParentWithDom = findClosestDom(node);
-        if (!firstParentWithDom.dom) {
-          throw new Error("Missing DOM.");
-        }
-
         nodeConstruction.dom = createDom(expected);
         firstParentWithDom.dom.appendChild(nodeConstruction.dom);
         newNode = nodeConstruction;
@@ -387,10 +370,6 @@ const update = (node: RNode, element: RElement | null) => {
         };
 
         const firstParentWithDom = findClosestDom(node);
-        if (!firstParentWithDom.dom) {
-          throw new Error("Missing DOM parent.");
-        }
-
         const dom = document.createTextNode(expected.content);
         firstParentWithDom.dom.appendChild(dom);
         nodeConstruction.dom = dom;
@@ -418,23 +397,9 @@ const update = (node: RNode, element: RElement | null) => {
             hook.cleanup();
           }
         });
-
-        // It's safe to assume there's only one child descendant of component.
-        const child = current.descendants[0];
-        if (child && child.kind === NodeType.HOST) {
-          removeDom(findClosestDom(child));
-        }
-      } else if (current.kind === NodeType.HOST) {
-        removeDom(current);
-      } else if (current.kind === NodeType.TEXT) {
-        current.dom.parentNode?.removeChild(current.dom);
-      } else if (current.kind === NodeType.PROVIDER) {
-        const child = current.descendants[0];
-        if (child && child.kind === NodeType.HOST) {
-          removeDom(findClosestDom(child));
-        }
       }
 
+      removeDom(current);
       node.descendants.splice(indexOfCurrent, 1);
     }
   });

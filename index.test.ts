@@ -341,18 +341,6 @@ describe("render", () => {
       "<div><div><div>This is always here</div></div></div>"
     );
   });
-
-  xit("works with component replacing component", () => {
-    // TODO
-  });
-
-  xit("works with component replacing host node", () => {
-    // TODO
-  });
-
-  xit("works with node removal", () => {
-    // TODO
-  });
 });
 
 describe("useState", () => {

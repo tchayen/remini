@@ -123,6 +123,8 @@ export const findClosestDom = (node: RNode): HostNode => {
     current = current.parent;
   }
 
+  // Only interested in looking for host node as text node wouldn't have
+  // children anyway.
   if (current.kind !== NodeType.HOST) {
     throw new Error("Couldn't find node.");
   }
