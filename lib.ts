@@ -115,21 +115,23 @@ export type Hook =
       dependencies?: any[];
     };
 
-export function createElement(
-  component: ComponentType,
-  props: Props,
+type FirstArgument<T> = T extends (arg1: infer U) => RElement ? U : any;
+
+export function createElement<C extends ComponentType>(
+  component: C,
+  props: Omit<FirstArgument<C>, "children">,
   children: Children
 ): RElement;
 
-export function createElement(
-  component: ComponentType,
-  props?: Props,
+export function createElement<C extends ComponentType>(
+  component: C,
+  props?: Omit<FirstArgument<C>, "children">,
   ...children: (RElement | string | null)[]
 ): RElement;
 
-export function createElement(
-  component: ComponentType,
-  props: Props,
+export function createElement<C extends ComponentType>(
+  component: C,
+  props: Omit<FirstArgument<C>, "children">,
   ...children: any
 ): RElement {
   const p = {
@@ -608,16 +610,16 @@ export const useMemo = <T>(callback: () => T, dependencies: any[]): T => {
   return hook.memo;
 };
 
-type ProviderProps<T> = { value: T; children: Children };
+type ProviderProps<T> = { value: T };
 
 type Context<T> = {
-  Provider: ({ value, children }: ProviderProps<T>) => RElement;
+  Provider: ({ value }: ProviderProps<T>) => RElement;
 };
 
 export const createContext = <T>(): Context<T> => {
   const context: any = {};
 
-  const Provider = <T>({ children, value }: ProviderProps<T>): RElement => {
+  const Provider = <T>({ value }: ProviderProps<T>): RElement => {
     // Doesn't matter what is being returned here.
     return createElement("a", {});
   };
