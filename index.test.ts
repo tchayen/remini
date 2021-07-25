@@ -9,7 +9,6 @@ import {
   useMemo,
   useRef,
   useState,
-  _rootNode,
 } from "./lib";
 
 jest.useFakeTimers();
@@ -646,7 +645,7 @@ describe("useMemo", () => {
     const mock = jest.fn();
 
     const App = () => {
-      const _memo = useMemo(mock, []);
+      const _ = useMemo(mock, []);
       const [, setState] = useState(0);
 
       useEffect(() => {
@@ -1028,6 +1027,46 @@ describe("DOM", () => {
     expect(document.body.innerHTML).toBe(
       "<div><div><div>a</div><div>b</div><div>c</div><div>d</div></div></div>"
     );
+  });
+
+  it("has DOM removed when component that has non-host node as first child is detached", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const UserContext = createContext();
+
+    const Login = () => {
+      const user = useContext<{ name: string }>(UserContext);
+
+      return c("span", {}, user.name);
+    };
+
+    const User = () => {
+      return c(UserContext.Provider, { value: { name: "John" } }, c(Login));
+    };
+
+    const App = () => {
+      const [show, setShow] = useState(true);
+
+      useEffect(() => {
+        setTimeout(() => {
+          setShow(false);
+        }, 500);
+      }, []);
+
+      return c("div", {}, show ? c(User) : "test");
+    };
+
+    const tree = c(App);
+    render(tree, root);
+
+    expect(document.body.innerHTML).toBe(
+      "<div><div><span>John</span></div></div>"
+    );
+
+    jest.runOnlyPendingTimers();
+
+    expect(document.body.innerHTML).toBe("<div><div>test</div></div>");
   });
 
   xit("has text nodes updated", () => {

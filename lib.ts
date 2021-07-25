@@ -269,9 +269,7 @@ const update = (node: RNode, element: RElement | null) => {
           hooks: [],
         };
 
-        if (current.kind === NodeType.HOST) {
-          removeDom(current);
-        }
+        removeDom(current);
       } else if (expected.kind === NodeType.HOST) {
         const firstParentWithDom = findClosestDom(node);
         if (!firstParentWithDom.dom) {
@@ -288,6 +286,7 @@ const update = (node: RNode, element: RElement | null) => {
         if (current.kind === NodeType.HOST || current.kind === NodeType.TEXT) {
           firstParentWithDom.dom.replaceChild(newDom, current.dom);
         } else {
+          removeDom(current);
           firstParentWithDom.dom.appendChild(newDom);
         }
         nodeConstruction.dom = newDom;
@@ -312,6 +311,7 @@ const update = (node: RNode, element: RElement | null) => {
           firstParentWithDom.dom.replaceChild(dom, current.dom);
           nodeConstruction.dom = dom;
         } else {
+          removeDom(current);
           firstParentWithDom.dom.appendChild(dom);
           nodeConstruction.dom = dom;
         }
@@ -325,9 +325,7 @@ const update = (node: RNode, element: RElement | null) => {
           descendants: [],
         };
 
-        if (current.kind === NodeType.HOST) {
-          removeDom(current);
-        }
+        removeDom(current);
       } else {
         throw new Error("Couldn't resolve node kind.");
       }
@@ -431,7 +429,10 @@ const update = (node: RNode, element: RElement | null) => {
       } else if (current.kind === NodeType.TEXT) {
         current.dom.parentNode?.removeChild(current.dom);
       } else if (current.kind === NodeType.PROVIDER) {
-        return;
+        const child = current.descendants[0];
+        if (child && child.kind === NodeType.HOST) {
+          removeDom(findClosestDom(child));
+        }
       }
 
       node.descendants.splice(indexOfCurrent, 1);

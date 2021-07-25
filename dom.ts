@@ -106,12 +106,14 @@ export const updateDom = (current: HostNode, expected: HostElement): void => {
   });
 };
 
-export const removeDom = (node: HostNode): void => {
-  if (node.kind !== NodeType.HOST) {
-    throw new Error("Tried to remove incorrect node.");
+export const removeDom = (node: RNode): void => {
+  if (node.kind === NodeType.HOST || node.kind === NodeType.TEXT) {
+    node.dom.parentNode?.removeChild(node.dom);
+  } else {
+    node.descendants.forEach((child) => {
+      removeDom(child);
+    });
   }
-
-  node.dom.parentNode?.removeChild(node.dom);
 };
 
 export const findClosestDom = (node: RNode): HostNode => {
