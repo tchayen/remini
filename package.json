@@ -1,28 +1,20 @@
 {
   "name": "remini",
-  "version": "0.0.1",
-  "source": "lib.ts",
-  "module": "dist/lib.js",
-  "types": "dist/lib.d.ts",
+  "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "start": "parcel index.html",
-    "test": "jest --watch --env=jsdom",
-    "build": "parcel build lib.ts"
+    "test": "jest --watch --env=jsdom"
   },
   "devDependencies": {
-    "@babel/core": "^7.14.6",
-    "@babel/preset-env": "^7.14.7",
+    "@babel/core": "^7.14.8",
+    "@babel/preset-env": "^7.14.8",
     "@babel/preset-typescript": "^7.14.5",
-    "@parcel/packager-ts": "2.0.0-beta.2",
-    "@parcel/transformer-typescript-types": "2.0.0-beta.2",
     "@types/jest": "^26.0.24",
     "@typescript-eslint/eslint-plugin": "^4.28.4",
     "@typescript-eslint/parser": "^4.28.4",
     "babel-jest": "^27.0.6",
     "eslint": "^7.30.0",
     "jest": "^27.0.6",
-    "parcel": "^2.0.0-beta.2",
     "prettier": "^2.3.2",
     "typescript": "^4.3.5"
   }

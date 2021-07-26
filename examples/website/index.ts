@@ -1,3 +1,4 @@
+import "./style.css";
 import { createElement as c, render, useEffect, useState } from "../../lib";
 import { getFriendlyTime } from "./date";
 import Author from "./src/Author";

@@ -1,5 +1,0 @@
-{
-  "scripts": {
-    "start": "../../node_modules/.bin/parcel index.html"
-  }
-}

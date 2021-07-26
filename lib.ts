@@ -152,6 +152,7 @@ export function createElement<C extends ComponentType>(
   };
 
   if (typeof component === "function") {
+    // Provider has context injected as a param to its function.
     if (component.context) {
       return {
         kind: NodeType.PROVIDER,
