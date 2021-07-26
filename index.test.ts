@@ -244,10 +244,16 @@ describe("createElement", () => {
     expect(result).toStrictEqual(expected);
   });
 
-  xit("works with fragments", () => {
-    // TODO add fragments.
+  it("works with fragments", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
     // // <><div>a</div><div>b</div></>
-    // c('', {}, c('div', {}, 'a'), c('div', {}, 'b'));
+    const tree = c("", {}, c("div", {}, "a"), c("div", {}, "b"));
+
+    render(tree, root);
+
+    expect(document.body.innerHTML).toBe("<div><div>a</div><div>b</div></div>");
   });
 });
 

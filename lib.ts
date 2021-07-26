@@ -28,6 +28,7 @@ export enum NodeType {
   TEXT = 3,
   PROVIDER = 4,
   NULL = 5,
+  FRAGMENT = 6,
 }
 
 export type ComponentElement = {
@@ -75,13 +76,29 @@ export type ProviderNode = ProviderElement & {
   descendants: RNode[];
 };
 
+export type FragmentElement = {
+  kind: NodeType.FRAGMENT;
+  props: ElementProps;
+};
+
+export type FragmentNode = FragmentElement & {
+  parent: RNode | null;
+  descendants: RNode[];
+};
+
 export type RElement =
   | ComponentElement
   | HostElement
   | TextElement
-  | ProviderElement;
+  | ProviderElement
+  | FragmentElement;
 
-export type RNode = ComponentNode | HostNode | TextNode | ProviderNode;
+export type RNode =
+  | ComponentNode
+  | HostNode
+  | TextNode
+  | ProviderNode
+  | FragmentNode;
 
 enum HookType {
   STATE = 1,
@@ -166,6 +183,13 @@ export function createElement<C extends ComponentType>(
       props: p,
     };
   } else if (typeof component === "string") {
+    if (component === "") {
+      return {
+        kind: NodeType.FRAGMENT,
+        props: p,
+      };
+    }
+
     return {
       kind: NodeType.HOST,
       tag: component,
@@ -205,7 +229,9 @@ const update = (node: RNode, element: RElement | null) => {
   } else if (
     element &&
     "props" in element &&
-    (node.kind === NodeType.HOST || node.kind === NodeType.PROVIDER)
+    (node.kind === NodeType.HOST ||
+      node.kind === NodeType.PROVIDER ||
+      node.kind === NodeType.FRAGMENT)
   ) {
     if (node.kind === NodeType.PROVIDER) {
       const currentValue = contextValues.get(node.context);
@@ -237,6 +263,8 @@ const update = (node: RNode, element: RElement | null) => {
         (current.kind === NodeType.HOST &&
           expected.kind === NodeType.HOST &&
           current.tag === expected.tag) ||
+        (current.kind === NodeType.FRAGMENT &&
+          expected.kind === NodeType.FRAGMENT) ||
         (current.kind === NodeType.PROVIDER &&
           expected.kind === NodeType.PROVIDER) ||
         (current.kind === NodeType.TEXT && expected.kind === NodeType.TEXT))
@@ -319,6 +347,14 @@ const update = (node: RNode, element: RElement | null) => {
         };
 
         removeDom(current);
+      } else if (expected.kind === NodeType.FRAGMENT) {
+        newNode = {
+          ...expected,
+          parent: node,
+          descendants: [],
+        };
+
+        removeDom(current);
       } else {
         throw new Error("Couldn't resolve node kind.");
       }
@@ -380,6 +416,12 @@ const update = (node: RNode, element: RElement | null) => {
           parent: node,
           descendants: [],
           context: expected.props.$$context,
+        };
+      } else if (expected.kind === NodeType.FRAGMENT) {
+        newNode = {
+          ...expected,
+          parent: node,
+          descendants: [],
         };
       } else {
         throw new Error("Couldn't resolve node kind.");
