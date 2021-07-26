@@ -2,6 +2,17 @@
   "name": "remini",
   "version": "0.0.0",
   "license": "MIT",
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/remini.umd.js",
+  "module": "./dist/remini.es.js",
+  "exports": {
+    ".": {
+      "import": "./dist/remini.es.js",
+      "require": "./dist/remini.umd.js"
+    }
+  },
   "scripts": {
     "test": "jest --watch --env=jsdom"
   },
@@ -16,6 +27,7 @@
     "eslint": "^7.30.0",
     "jest": "^27.0.6",
     "prettier": "^2.3.2",
-    "typescript": "^4.3.5"
+    "typescript": "^4.3.5",
+    "vite": "^2.4.3"
   }
 }
