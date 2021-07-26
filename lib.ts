@@ -132,14 +132,6 @@ export type Hook =
       dependencies?: any[];
     };
 
-// const Avatar = ({ author }: { author: number }) => {
-//   return createElement("div", { class: "123" }, author.toString());
-// };
-
-// createElement(Avatar, { author: 1 });
-
-// type FirstArgument<T> = T extends (arg1: infer U) => RElement ? U : any;
-
 export function createElement(
   component: ComponentType,
   props: Props,
@@ -147,7 +139,7 @@ export function createElement(
 ): RElement;
 
 export function createElement(
-  component: C,
+  component: ComponentType,
   props?: Props,
   ...children: (RElement | string | null)[]
 ): RElement;
