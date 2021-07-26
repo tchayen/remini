@@ -596,13 +596,16 @@ export const useRef = <T>(): { current: T | null } => {
     throw new Error("Can't use useRef on this node.");
   }
 
-  const ref: Hook = { type: HookType.REF, current: null };
+  let ref: Hook = _currentNode.hooks[_hookIndex];
+  if (ref === undefined) {
+    ref = { type: HookType.REF, current: null };
+    _currentNode.hooks[_hookIndex] = ref;
+  }
 
   if (ref.type !== HookType.REF) {
     throw new Error("Something went wrong.");
   }
 
-  _currentNode.hooks[_hookIndex] = ref;
   _hookIndex += 1;
 
   return ref;

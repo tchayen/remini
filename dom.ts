@@ -38,7 +38,7 @@ export const createDom = (
   const html = createElement(element.tag);
 
   Object.entries(element.props).forEach(([key, value]) => {
-    if (key === "children") {
+    if (key === "children" || key === "ref") {
       // Skip.
     } else if (key === "style") {
       const style =
@@ -59,7 +59,7 @@ export const updateDom = (current: HostNode, expected: HostElement): void => {
   const html = current.dom as HTMLElement;
 
   Object.keys(current.props).forEach((key) => {
-    if (key === "children") {
+    if (key === "children" || key === "ref") {
       // Skip.
     } else if (isEvent(key)) {
       html.removeEventListener(eventToKeyword(key), current.props[key]);
@@ -85,7 +85,7 @@ export const updateDom = (current: HostNode, expected: HostElement): void => {
   });
 
   Object.keys(expected.props).forEach((key) => {
-    if (key === "children") {
+    if (key === "children" || key === "ref") {
       // Skip.
     } else if (isEvent(key)) {
       html.addEventListener(eventToKeyword(key), expected.props[key]);
