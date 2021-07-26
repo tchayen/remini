@@ -8,10 +8,6 @@ const AutoScale = (props: any): RElement => {
     ref.current.style.height = `${ref.current.scrollHeight}px`;
   };
 
-  const delayedResize = () => {
-    setTimeout(resize, 0);
-  };
-
   useEffect(() => {
     resize();
   }, []);
@@ -20,14 +16,10 @@ const AutoScale = (props: any): RElement => {
     ref,
     style: {
       resize: "none",
-      overflow: "hidden",
+      overflowY: "hidden",
     },
     row: 1,
-    onChange: resize,
-    onCut: delayedResize,
-    onPaste: delayedResize,
-    onDrop: delayedResize,
-    onKeyDown: delayedResize,
+    onInput: resize,
     ...props,
   });
 };
