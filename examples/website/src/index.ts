@@ -1,13 +1,13 @@
-import "./style.css";
-import { createElement as c, render, useEffect, useState } from "../../lib";
+import "../style.css";
+import { createElement as c, render, useEffect, useState } from "../../../lib";
 import { getFriendlyTime } from "./date";
-import Author from "./src/Author";
-import Avatar from "./src/Avatar";
-import { LOADING_TIME, TEXT_SECONDARY } from "./src/constants";
-import { posts, PostType, users } from "./src/data";
-import LoginForm from "./src/LoginForm";
-import { SessionContext } from "./src/SessionContext";
-import AutoScale from "./src/AutoScale";
+import Author from "./Author";
+import Avatar from "./Avatar";
+import { LOADING_TIME, TEXT_SECONDARY } from "./constants";
+import { posts, PostType, users } from "./data";
+import LoginForm from "./LoginForm";
+import { SessionContext } from "./SessionContext";
+import AutoScale from "./ui/AutoScale";
 
 const root = document.getElementById("root");
 

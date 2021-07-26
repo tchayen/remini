@@ -108,29 +108,31 @@ enum HookType {
   MEMO = 5,
 }
 
-export type Hook =
-  | {
-      type: HookType.STATE;
-      state: any;
-    }
-  | {
-      type: HookType.EFFECT;
-      cleanup: (() => void) | undefined;
-      dependencies?: any[];
-    }
-  | {
-      type: HookType.REF;
-      current: any;
-    }
-  | {
-      type: HookType.CONTEXT;
-      context: any;
-    }
-  | {
-      type: HookType.MEMO;
-      memo: any;
-      dependencies?: any[];
-    };
+type StateHook = {
+  type: HookType.STATE;
+  state: any;
+};
+
+type EffectHook = {
+  type: HookType.EFFECT;
+  cleanup: (() => void) | undefined;
+  dependencies?: any[];
+};
+type RefHook = {
+  type: HookType.REF;
+  current: any;
+};
+type ContextHook = {
+  type: HookType.CONTEXT;
+  context: any;
+};
+type MemoHook = {
+  type: HookType.MEMO;
+  memo: any;
+  dependencies?: any[];
+};
+
+export type Hook = StateHook | EffectHook | RefHook | ContextHook | MemoHook;
 
 export function createElement(
   component: ComponentType,
@@ -505,7 +507,7 @@ export const useEffect = (
 
     if (c.hooks[i] === undefined) {
       // INITIALIZE
-      const hook: Hook = {
+      const hook: EffectHook = {
         type: HookType.EFFECT,
         cleanup: undefined,
         dependencies,
@@ -596,7 +598,7 @@ export const useRef = <T>(): { current: T | null } => {
     throw new Error("Can't use useRef on this node.");
   }
 
-  let ref: Hook = _currentNode.hooks[_hookIndex];
+  let ref = _currentNode.hooks[_hookIndex];
   if (ref === undefined) {
     ref = { type: HookType.REF, current: null };
     _currentNode.hooks[_hookIndex] = ref;
@@ -675,9 +677,6 @@ export const createContext = <T>(): Context<T> => {
 };
 
 export const useContext = <T>(context: Context<T>): T => {
-  // Return whatever value is. Undefined or null might be intentional and can
-  // make a difference.
-
   if (!_currentNode || _currentNode.kind !== NodeType.COMPONENT) {
     throw new Error("Can't call useContext on this node.");
   }
@@ -691,7 +690,6 @@ export const useContext = <T>(context: Context<T>): T => {
   }
 
   const hook = _currentNode.hooks[_hookIndex];
-
   if (hook.type !== HookType.CONTEXT) {
     throw new Error("Something went wrong.");
   }

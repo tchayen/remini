@@ -1,4 +1,4 @@
-import { createElement as c, RElement } from "../../../lib";
+import { createElement as c, RElement } from "../../../../lib";
 
 const Spinner = (): RElement => {
   return c(

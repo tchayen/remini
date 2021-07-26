@@ -1,5 +1,5 @@
-import { createElement as c, RElement } from "../../../lib";
-import { TEXT_PRIMARY } from "./constants";
+import { createElement as c, RElement } from "../../../../lib";
+import { TEXT_PRIMARY } from "../constants";
 
 const Label = ({ children, ...props }: any): RElement => {
   return c(

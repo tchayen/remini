@@ -1,4 +1,4 @@
-import { createElement as c, RElement } from "../../../lib";
+import { createElement as c, RElement } from "../../../../lib";
 
 const Button = ({ children, loading, ...props }: any): RElement => {
   return c(

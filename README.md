@@ -32,7 +32,7 @@ render(c(Counter), document.getElementById("root"));
 - [x] Updater version of `setState`
 - [x] `ref`s
 - [x] Context API
-- [ ] `<Fragment />`
+- [x] `<Fragment />`
 - [ ] SSR
 
 ## Useful reading

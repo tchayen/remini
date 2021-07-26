@@ -4,12 +4,12 @@ import {
   useContext,
   useState,
 } from "../../../lib";
-import Button from "./Button";
+import Button from "./ui/Button";
 import { LOADING_TIME, TEXT_PRIMARY, TEXT_SECONDARY } from "./constants";
-import Input from "./Input";
-import Label from "./Label";
+import Input from "./ui/Input";
+import Label from "./ui/Label";
 import { SessionContext } from "./SessionContext";
-import Spinner from "./Spinner";
+import Spinner from "./ui/Spinner";
 
 const LoginForm = (): RElement => {
   const session = useContext(SessionContext);

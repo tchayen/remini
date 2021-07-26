@@ -1,4 +1,9 @@
-import { createElement as c, RElement, useEffect, useRef } from "../../../lib";
+import {
+  createElement as c,
+  RElement,
+  useEffect,
+  useRef,
+} from "../../../../lib";
 
 const AutoScale = (props: any): RElement => {
   const ref = useRef();
