@@ -121,4 +121,4 @@ const App = () => {
 
 const tree = c(App);
 
-render(tree, root!);
+render(tree, root);

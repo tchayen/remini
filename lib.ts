@@ -18,7 +18,7 @@ type Props = {
   style?: Record<string, unknown> | string;
 };
 
-export type RenderFunction = (props: Props) => RElement;
+export type RenderFunction = <P extends Props>(props: P) => RElement;
 
 export type ComponentType = RenderFunction | NodeType.PROVIDER | string;
 
@@ -132,23 +132,29 @@ export type Hook =
       dependencies?: any[];
     };
 
-type FirstArgument<T> = T extends (arg1: infer U) => RElement ? U : any;
+// const Avatar = ({ author }: { author: number }) => {
+//   return createElement("div", { class: "123" }, author.toString());
+// };
 
-export function createElement<C extends ComponentType>(
-  component: C,
-  props: Omit<FirstArgument<C>, "children">,
+// createElement(Avatar, { author: 1 });
+
+// type FirstArgument<T> = T extends (arg1: infer U) => RElement ? U : any;
+
+export function createElement(
+  component: ComponentType,
+  props: Props,
   children: Children
 ): RElement;
 
-export function createElement<C extends ComponentType>(
+export function createElement(
   component: C,
-  props?: Omit<FirstArgument<C>, "children">,
+  props?: Props,
   ...children: (RElement | string | null)[]
 ): RElement;
 
-export function createElement<C extends ComponentType>(
-  component: C,
-  props: Omit<FirstArgument<C>, "children">,
+export function createElement(
+  component: any,
+  props: any,
   ...children: any
 ): RElement {
   const p = {

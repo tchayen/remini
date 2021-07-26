@@ -1,7 +1,7 @@
-import { createElement as c } from "../../../lib";
+import { createElement as c, RElement } from "../../../lib";
 import { TEXT_PRIMARY } from "./constants";
 
-const Input = ({ loading, ...props }: any) => {
+const Input = ({ loading, ...props }: any): RElement => {
   return c(
     "div",
     { class: "mt-1 mb-4" },

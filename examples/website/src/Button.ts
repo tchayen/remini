@@ -1,6 +1,6 @@
-import { createElement as c } from "../../../lib";
+import { createElement as c, RElement } from "../../../lib";
 
-const Button = ({ children, loading, ...props }: any) => {
+const Button = ({ children, loading, ...props }: any): RElement => {
   return c(
     "button",
     {

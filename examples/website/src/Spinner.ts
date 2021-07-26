@@ -1,6 +1,6 @@
-import { createElement as c } from "../../../lib";
+import { createElement as c, RElement } from "../../../lib";
 
-const Spinner = () => {
+const Spinner = (): RElement => {
   return c(
     "svg",
     {

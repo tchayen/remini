@@ -1,4 +1,9 @@
-import { createElement as c, useContext, useState } from "../../../lib";
+import {
+  createElement as c,
+  RElement,
+  useContext,
+  useState,
+} from "../../../lib";
 import Button from "./Button";
 import { LOADING_TIME, TEXT_PRIMARY, TEXT_SECONDARY } from "./constants";
 import Input from "./Input";
@@ -6,7 +11,7 @@ import Label from "./Label";
 import { SessionContext } from "./SessionContext";
 import Spinner from "./Spinner";
 
-const LoginForm = () => {
+const LoginForm = (): RElement => {
   const session = useContext(SessionContext);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
