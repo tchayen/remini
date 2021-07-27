@@ -1,9 +1,11 @@
 import {
   createContext,
   createElement as c,
+  hydrate,
   NodeType,
   RElement,
   render,
+  renderToString,
   useContext,
   useEffect,
   useMemo,
@@ -1264,5 +1266,68 @@ describe("DOM", () => {
     jest.runOnlyPendingTimers();
 
     expect(mock).toHaveBeenCalledTimes(1);
+  });
+});
+
+// TODO tests:
+// - UseEffect with change in dependencies array
+// - Trigger node update that results in prop removal
+// - Trigger node update that results in prop update (not addition)
+// - Create <svg> element
+
+describe("ssr", () => {
+  it("works", () => {
+    const Counter = () => {
+      const [count, setCount] = useState(0);
+
+      return c("span", { style: { display: "none" } }, `Count: ${count}`);
+    };
+
+    const tree = c("div", {}, c(Counter));
+
+    const string = renderToString(tree);
+    expect(string).toBe(
+      '<div id="root"><div><span style="display:none">Count: 0</span></div></div>'
+    );
+  });
+
+  it("hydrates", () => {
+    const mock = jest.fn();
+
+    const Title = ({ children }: { children: string }) => {
+      return c("h1", {}, children);
+    };
+
+    const App = () => {
+      const onClick = () => {
+        mock();
+      };
+
+      return c(
+        "div",
+        { id: "main" },
+        c(Title, {}, "Hello"),
+        c("span", {}, "World"),
+        c("button", { onClick, id: "button" }, "Click")
+      );
+    };
+
+    const tree = c(App);
+    const html = renderToString(tree);
+    document.body.innerHTML = html;
+
+    const root = document.getElementById("root");
+
+    hydrate(tree, root!);
+
+    const button = document.getElementById("button");
+    button.click();
+    expect(mock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("getNextNode", () => {
+  it("", () => {
+    //
   });
 });

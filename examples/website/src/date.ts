@@ -11,8 +11,8 @@ const format = (ms: number, abbreviation: string, unit: number) => {
   return `${amount}${abbreviation}`;
 };
 
-export const getFriendlyTime = (date: Date) => {
-  const ms = new Date() - date;
+export const getFriendlyTime = (date: Date): string => {
+  const ms = Date.now() - date.getTime();
   if (isNaN(ms) || !isFinite(ms)) {
     throw new Error(`Wrong value provided: ${ms}`);
   }

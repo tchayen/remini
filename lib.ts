@@ -1,10 +1,16 @@
-import {
-  findClosestComponent,
-  findClosestDom,
-  createDom,
-  updateDom,
-  removeDom,
-} from "./dom";
+import { Host as DomHost } from "./dom";
+import { SSRNode, Host as SSRHost } from "./ssr";
+
+type HostType<T, R> = {
+  findClosestComponent: (node: RNode) => ComponentNode | null;
+  findClosestHostNode: (node: RNode) => HostNode;
+  createHostNode: (element: HostElement) => T;
+  updateHostNode: (current: HostNode, expected: HostElement) => void;
+  removeHostNode: (hostNode: RNode) => void;
+  appendChild: (parent: T, child: T) => void;
+  createTextNode: (text: string) => R;
+  updateTextNode: (current: TextNode, text: string) => void;
+};
 
 type Children = RElement[] | string | null;
 
@@ -18,9 +24,9 @@ type Props = {
   style?: Record<string, unknown> | string;
 };
 
-export type RenderFunction = <P extends Props>(props: P) => RElement;
+export type RenderFunction = (props: any) => RElement;
 
-export type ComponentType = RenderFunction | NodeType.PROVIDER | string;
+export type ComponentType = RenderFunction | string;
 
 export enum NodeType {
   COMPONENT = 1,
@@ -52,7 +58,7 @@ export type HostElement = {
 export type HostNode = HostElement & {
   parent: RNode | null;
   descendants: RNode[];
-  dom: Node;
+  native: any;
 };
 
 export type TextElement = {
@@ -62,7 +68,7 @@ export type TextElement = {
 
 export type TextNode = TextElement & {
   parent: RNode | null;
-  dom: Node;
+  native: any;
 };
 
 export type ProviderElement = {
@@ -134,6 +140,14 @@ type MemoHook = {
 
 export type Hook = StateHook | EffectHook | RefHook | ContextHook | MemoHook;
 
+// const Avatar = ({ author }: { author: number }) => {
+//   return createElement("div", { class: "123" }, author.toString());
+// };
+
+// createElement(Avatar, { author: 1 });
+
+// type FirstArgument<T> = T extends (arg1: infer U) => RElement ? U : any;
+
 export function createElement(
   component: ComponentType,
   props: Props,
@@ -202,10 +216,18 @@ export function createElement(
 
 let _currentNode: RNode | null = null;
 let _hookIndex = 0;
+let _currentHost: HostType<any, any> | null = null;
 
 const contextValues: Map<Context<any>, any> = new Map();
 
-const update = (node: RNode, element: RElement | null) => {
+const update = (
+  node: RNode,
+  element: RElement | null,
+  config: UpdateConfig
+) => {
+  const { Host } = config;
+  _currentHost = Host;
+
   const previousNode = _currentNode;
   const previousIndex = _hookIndex;
 
@@ -246,6 +268,15 @@ const update = (node: RNode, element: RElement | null) => {
     elements = element.props.children;
   }
 
+  if (
+    config.isHydrating &&
+    node.kind === NodeType.HOST &&
+    element &&
+    element.kind === NodeType.HOST
+  ) {
+    Host.updateHostNode(node, element);
+  }
+
   // Reconcile.
   const length = Math.max(node.descendants.length, elements.length);
   const pairs: [left: RNode | undefined, right: RElement | undefined][] = [];
@@ -271,14 +302,14 @@ const update = (node: RNode, element: RElement | null) => {
     ) {
       // UPDATE
       if (current.kind === NodeType.HOST && expected.kind === NodeType.HOST) {
-        updateDom(current, expected);
+        Host.updateHostNode(current, expected);
       } else if (
         // Text value changed.
         current.kind === NodeType.TEXT &&
         expected.kind === NodeType.TEXT &&
         current.content !== expected.content
       ) {
-        current.dom.nodeValue = expected.content;
+        Host.updateTextNode(current, expected.content);
       }
 
       // Props can be updated.
@@ -286,7 +317,7 @@ const update = (node: RNode, element: RElement | null) => {
         current.props = expected.props;
       }
 
-      update(current, expected);
+      update(current, expected, config);
     } else if (current && expected) {
       // REPLACE
       let newNode: RNode;
@@ -298,9 +329,9 @@ const update = (node: RNode, element: RElement | null) => {
           hooks: [],
         };
 
-        removeDom(current);
+        Host.removeHostNode(current);
       } else if (expected.kind === NodeType.HOST) {
-        const firstParentWithDom = findClosestDom(node);
+        const firstParentWithHostNode = Host.findClosestHostNode(node);
 
         const nodeConstruction: any = {
           ...expected,
@@ -308,33 +339,33 @@ const update = (node: RNode, element: RElement | null) => {
           descendants: [],
         };
 
-        const newDom = createDom(expected);
+        const native = Host.createHostNode(expected);
         if (current.kind === NodeType.HOST || current.kind === NodeType.TEXT) {
-          firstParentWithDom.dom.replaceChild(newDom, current.dom);
+          firstParentWithHostNode.native.replaceChild(native, current.native);
         } else {
-          removeDom(current);
-          firstParentWithDom.dom.appendChild(newDom);
+          Host.removeHostNode(current);
+          Host.appendChild(firstParentWithHostNode.native, native);
         }
-        nodeConstruction.dom = newDom;
+        nodeConstruction.native = native;
 
         newNode = nodeConstruction;
       } else if (expected.kind === NodeType.TEXT) {
-        const firstParentWithDom = findClosestDom(node);
+        const firstParentWithHostNode = Host.findClosestHostNode(node);
         const nodeConstruction: any = {
           ...expected,
           parent: node,
         };
 
-        const dom = document.createTextNode(expected.content);
+        const native = Host.createTextNode(expected.content);
         if (current.kind === NodeType.TEXT) {
           throw new Error("Update should have happened on this node.");
         } else if (current.kind === NodeType.HOST) {
-          firstParentWithDom.dom.replaceChild(dom, current.dom);
-          nodeConstruction.dom = dom;
+          firstParentWithHostNode.native.replaceChild(native, current.native);
+          nodeConstruction.native = native;
         } else {
-          removeDom(current);
-          firstParentWithDom.dom.appendChild(dom);
-          nodeConstruction.dom = dom;
+          Host.removeHostNode(current);
+          Host.appendChild(firstParentWithHostNode.native, native);
+          nodeConstruction.native = native;
         }
 
         newNode = nodeConstruction;
@@ -346,7 +377,7 @@ const update = (node: RNode, element: RElement | null) => {
           descendants: [],
         };
 
-        removeDom(current);
+        Host.removeHostNode(current);
       } else if (expected.kind === NodeType.FRAGMENT) {
         newNode = {
           ...expected,
@@ -354,7 +385,7 @@ const update = (node: RNode, element: RElement | null) => {
           descendants: [],
         };
 
-        removeDom(current);
+        Host.removeHostNode(current);
       } else {
         throw new Error("Couldn't resolve node kind.");
       }
@@ -368,9 +399,16 @@ const update = (node: RNode, element: RElement | null) => {
       }
 
       node.descendants[node.descendants.indexOf(current)] = newNode;
-      update(newNode, expected);
+      update(newNode, expected, config);
     } else if (!current && expected !== undefined) {
       // ADD
+
+      //////////////////////////////////////////////////////////////////////////
+      // TODO                                                                 //
+      // if hydrating then look for the host node to already exist and throw  //
+      // if it doesn't.                                                       //
+      //////////////////////////////////////////////////////////////////////////
+
       let newNode: RNode;
       if (expected.kind === NodeType.COMPONENT) {
         newNode = {
@@ -385,17 +423,27 @@ const update = (node: RNode, element: RElement | null) => {
           parent: node,
           descendants: [],
         };
-        const firstParentWithDom = findClosestDom(node);
-        nodeConstruction.dom = createDom(expected);
-        firstParentWithDom.dom.appendChild(nodeConstruction.dom);
+        const firstParentWithHostNode = Host.findClosestHostNode(node);
+
+        if (config.isHydrating) {
+          nodeConstruction.native = _node;
+          getNextNode();
+        } else {
+          nodeConstruction.native = Host.createHostNode(expected);
+          Host.appendChild(
+            firstParentWithHostNode.native,
+            nodeConstruction.native
+          );
+        }
+
         newNode = nodeConstruction;
 
         // Handle useRef.
-        const closestComponent = findClosestComponent(node);
+        const closestComponent = Host.findClosestComponent(node);
         if (closestComponent && closestComponent.kind === NodeType.COMPONENT) {
           for (const hook of closestComponent.hooks) {
             if (hook.type === HookType.REF && expected.props.ref === hook) {
-              hook.current = (newNode as HostNode).dom;
+              hook.current = (newNode as HostNode).native;
             }
           }
         }
@@ -405,10 +453,17 @@ const update = (node: RNode, element: RElement | null) => {
           parent: node,
         };
 
-        const firstParentWithDom = findClosestDom(node);
-        const dom = document.createTextNode(expected.content);
-        firstParentWithDom.dom.appendChild(dom);
-        nodeConstruction.dom = dom;
+        const firstParentWithNative = Host.findClosestHostNode(node);
+
+        if (config.isHydrating) {
+          nodeConstruction.native = _node;
+          getNextNode();
+        } else {
+          const hostNode = Host.createTextNode(expected.content);
+          Host.appendChild(firstParentWithNative.native, hostNode);
+          nodeConstruction.native = hostNode;
+        }
+
         newNode = nodeConstruction;
       } else if (expected.kind === NodeType.PROVIDER) {
         newNode = {
@@ -428,7 +483,7 @@ const update = (node: RNode, element: RElement | null) => {
       }
 
       node.descendants.push(newNode);
-      update(newNode, expected);
+      update(newNode, expected, config);
     } else if (current !== undefined && !expected) {
       // REMOVE
       const indexOfCurrent = node.descendants.indexOf(current);
@@ -443,7 +498,7 @@ const update = (node: RNode, element: RElement | null) => {
         contextValues.delete(current.context);
       }
 
-      removeDom(current);
+      Host.removeHostNode(current);
       node.descendants.splice(indexOfCurrent, 1);
     }
   });
@@ -456,14 +511,25 @@ const update = (node: RNode, element: RElement | null) => {
 
   _currentNode = previousNode;
   _hookIndex = previousIndex;
+  _currentHost = null;
 };
 
 type Job = { node: RNode; element: RElement | null };
+
+type UpdateConfig = {
+  Host: HostType<any, any>;
+  isHydrating?: boolean;
+};
+
 let updating = false;
 const tasks: Job[] = [];
 const effects: (() => void)[] = [];
 
-const runUpdateLoop = (node: RNode, element: RElement | null) => {
+const runUpdateLoop = (
+  node: RNode,
+  element: RElement | null,
+  config: UpdateConfig
+) => {
   tasks.push({ node, element });
 
   if (updating) {
@@ -475,7 +541,7 @@ const runUpdateLoop = (node: RNode, element: RElement | null) => {
   let current: Job | undefined;
   // Run all state updates.
   while ((current = tasks.shift())) {
-    update(current.node, current.element);
+    update(current.node, current.element, config);
 
     // Run all effects queued for this update.
     let effect: (() => void) | undefined;
@@ -557,9 +623,14 @@ export const useState = <T>(
   // Capture the current node.
   const c = _currentNode;
   const i = _hookIndex;
+  const H = _currentHost;
 
   if (!c || c.kind !== NodeType.COMPONENT) {
     throw new Error("Executing useState for non-function element.");
+  }
+
+  if (!H) {
+    throw new Error("Missing host context.");
   }
 
   if (c.hooks[i] === undefined) {
@@ -585,7 +656,7 @@ export const useState = <T>(
       hook.state = next;
     }
 
-    runUpdateLoop(c, null);
+    runUpdateLoop(c, null, { Host: H });
   };
 
   _hookIndex += 1;
@@ -707,10 +778,86 @@ export const render = (element: RElement, container: HTMLElement): void => {
       children: [element],
     },
     tag: container.tagName.toLowerCase(),
-    dom: container,
+    native: container,
     parent: null,
     descendants: [],
   };
 
-  runUpdateLoop(_rootNode, createElement("div", {}, element));
+  runUpdateLoop(_rootNode, createElement("div", {}, element), {
+    Host: DomHost,
+  });
+};
+
+const print = (node: SSRNode | string): string => {
+  if (typeof node === "string") {
+    return node;
+  }
+
+  const optionalSpace = Object.keys(node.attributes).length > 0 ? " " : "";
+
+  const attributes = Object.keys(node.attributes)
+    .map((key) => `${key}="${node.attributes[key]}"`)
+    .join(" ");
+
+  const children = node.children.map((child) => print(child)).join("");
+
+  return `<${node.tag}${optionalSpace}${attributes}>${children}</${node.tag}>`;
+};
+
+export const renderToString = (element: RElement): string => {
+  _rootNode = {
+    kind: NodeType.HOST,
+    props: {
+      children: [element],
+      id: "root",
+    },
+    tag: "div",
+    native: { tag: "div", attributes: { id: "root" }, children: [] },
+    parent: null,
+    descendants: [],
+  };
+
+  runUpdateLoop(_rootNode, createElement("div", {}, element), {
+    Host: SSRHost,
+  });
+
+  return print(_rootNode.native);
+};
+
+export const hydrate = (element: RElement, container: HTMLElement): void => {
+  _rootNode = {
+    kind: NodeType.HOST,
+    props: {
+      children: [element],
+    },
+    tag: container.tagName.toLowerCase(),
+    native: container,
+    parent: null,
+    descendants: [],
+  };
+
+  _node = container.firstChild;
+
+  runUpdateLoop(_rootNode, createElement("div", {}, element), {
+    Host: DomHost,
+    isHydrating: true,
+  });
+};
+
+let _node: Node = null;
+export const getNextNode = () => {
+  if (_node.firstChild) {
+    _node = _node.firstChild;
+  } else if (_node.nextSibling) {
+    _node = _node.nextSibling;
+  } else {
+    while (!_node.nextSibling) {
+      _node = _node.parentNode;
+
+      if (_node === null) {
+        return;
+      }
+    }
+    _node = _node.nextSibling;
+  }
 };

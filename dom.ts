@@ -1,30 +1,14 @@
-import { ComponentNode, HostElement, HostNode, NodeType, RNode } from "./lib";
+import { HostElement, HostNode, NodeType, RNode, TextNode } from "./lib";
+import {
+  eventToKeyword,
+  isEvent,
+  keyToAttribute,
+  styleObjectToString,
+  findClosestComponent,
+  findClosestHostNode,
+} from "./utils";
 
-const isEvent = (key: string) => !!key.match(new RegExp("on[A-Z].*"));
-const eventToKeyword = (key: string) => key.replace("on", "").toLowerCase();
-
-const keyToAttribute = (key: string) => {
-  if (key === "viewBox") {
-    return key;
-  } else {
-    return camelCaseToKebab(key);
-  }
-};
-
-const camelCaseToKebab = (str: string) =>
-  str.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
-
-const styleObjectToString = (style: { [key: string]: string | number }) => {
-  const string = Object.keys(style)
-    .map((key) => {
-      const value = style[key];
-      return `${camelCaseToKebab(key)}:${value}`;
-    })
-    .join(";");
-  return string;
-};
-
-const createElement = (type: string) => {
+const createElement = (type: string): Element => {
   if (type === "svg" || type === "circle" || type === "path") {
     return document.createElementNS("http://www.w3.org/2000/svg", type);
   } else {
@@ -32,9 +16,7 @@ const createElement = (type: string) => {
   }
 };
 
-export const createDom = (
-  element: HostElement
-): HTMLElement | SVGGraphicsElement => {
+export const createDom = (element: HostElement): Element => {
   const html = createElement(element.tag);
 
   Object.entries(element.props).forEach(([key, value]) => {
@@ -56,7 +38,7 @@ export const createDom = (
 
 // Update two DOM nodes of the same HTML tag.
 export const updateDom = (current: HostNode, expected: HostElement): void => {
-  const html = current.dom as HTMLElement;
+  const html = current.native as HTMLElement;
 
   Object.keys(current.props).forEach((key) => {
     if (key === "children" || key === "ref") {
@@ -108,7 +90,7 @@ export const updateDom = (current: HostNode, expected: HostElement): void => {
 
 export const removeDom = (node: RNode): void => {
   if (node.kind === NodeType.HOST || node.kind === NodeType.TEXT) {
-    node.dom.parentNode?.removeChild(node.dom);
+    node.native.parentNode?.removeChild(node.native);
   } else {
     node.descendants.forEach((child) => {
       removeDom(child);
@@ -116,32 +98,24 @@ export const removeDom = (node: RNode): void => {
   }
 };
 
-export const findClosestDom = (node: RNode): HostNode => {
-  let current = node;
-
-  while (current.kind !== NodeType.HOST && current.parent) {
-    current = current.parent;
-  }
-
-  // Only interested in looking for host node as text node wouldn't have
-  // children anyway.
-  if (current.kind !== NodeType.HOST) {
-    throw new Error("Couldn't find node.");
-  }
-
-  return current;
+export const appendChild = (parent: Node, child: Node): void => {
+  parent.appendChild(child);
 };
 
-export const findClosestComponent = (node: RNode): ComponentNode | null => {
-  let current = node;
+export const createTextNode = (text: string): Text =>
+  document.createTextNode(text);
 
-  while (current.kind !== NodeType.COMPONENT && current.parent) {
-    current = current.parent;
-  }
+export const updateTextNode = (current: TextNode, text: string): void => {
+  current.native.nodeValue = text;
+};
 
-  if (current.kind !== NodeType.COMPONENT) {
-    return null;
-  }
-
-  return current;
+export const Host = {
+  findClosestComponent,
+  findClosestHostNode,
+  createHostNode: createDom,
+  updateHostNode: updateDom,
+  removeHostNode: removeDom,
+  appendChild,
+  createTextNode,
+  updateTextNode,
 };
