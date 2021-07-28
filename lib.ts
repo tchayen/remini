@@ -278,12 +278,6 @@ const update = (
     } else if (!current && expected !== undefined) {
       // ADD
 
-      //////////////////////////////////////////////////////////////////////////
-      // TODO                                                                 //
-      // if hydrating then look for the host node to already exist and throw  //
-      // if it doesn't.                                                       //
-      //////////////////////////////////////////////////////////////////////////
-
       let newNode: RNode;
       if (expected.kind === NodeType.COMPONENT) {
         newNode = {

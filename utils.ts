@@ -1,4 +1,4 @@
-import { ComponentNode, HostNode, NodeType, RNode } from "./lib";
+import { ComponentNode, HostNode, NodeType, RNode } from "./types";
 
 export const isEvent = (key: string): boolean =>
   !!key.match(new RegExp("on[A-Z].*"));

@@ -2,8 +2,6 @@ import {
   createContext,
   createElement as c,
   hydrate,
-  NodeType,
-  RElement,
   render,
   renderToString,
   useContext,
@@ -12,6 +10,7 @@ import {
   useRef,
   useState,
 } from "./lib";
+import { NodeType, RElement } from "./types";
 
 jest.useFakeTimers();
 
