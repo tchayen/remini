@@ -6,9 +6,13 @@ import {
 } from "../../../../lib";
 
 const AutoScale = (props: any): RElement => {
-  const ref = useRef();
+  const ref = useRef<HTMLTextAreaElement>();
 
   const resize = () => {
+    if (ref.current === null) {
+      return;
+    }
+
     ref.current.style.height = "auto";
     ref.current.style.height = `${ref.current.scrollHeight}px`;
   };

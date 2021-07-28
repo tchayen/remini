@@ -37,23 +37,28 @@ render(c(Counter), document.getElementById("root"));
 
 ## Useful reading
 
-[Blogged Answers: A (Mostly) Complete Guide to React Rendering Behavior](https://blog.isquaredsoftware.com/2020/05/blogged-answers-a-mostly-complete-guide-to-react-rendering-behavior/)
+- [Blogged Answers: A (Mostly) Complete Guide to React Rendering Behavior](https://blog.isquaredsoftware.com/2020/05/blogged-answers-a-mostly-complete-guide-to-react-rendering-behavior/)
+- [React as a UI Runtime](https://overreacted.io/react-as-a-ui-runtime/)
+- [A Complete Guide to useEffect](https://overreacted.io/a-complete-guide-to-useeffect)
+- [How Does setState Know What to Do?](https://overreacted.io/how-does-setstate-know-what-to-do/)
+- [The how and why on React’s usage of linked list in Fiber to walk the component’s tree](https://indepth.dev/posts/1007/the-how-and-why-on-reacts-usage-of-linked-list-in-fiber-to-walk-the-components-tree)
+- [Inside Fiber: in-depth overview of the new reconciliation algorithm in React](https://indepth.dev/posts/1008/inside-fiber-in-depth-overview-of-the-new-reconciliation-algorithm-in-react)
+- [In-depth explanation of state and props update in React](https://indepth.dev/posts/1009/in-depth-explanation-of-state-and-props-update-in-react)
+- [Build your own React](https://pomb.us/build-your-own-react/)
+- [XSS via a spoofed React element](http://danlec.com/blog/xss-via-a-spoofed-react-element)
 
-[React as a UI Runtime
-](https://overreacted.io/react-as-a-ui-runtime/)
+### HMR
 
-[A Complete Guide to useEffect](https://overreacted.io/a-complete-guide-to-useeffect)
+- [Dan Abramov's comment describing how to implement HMR](https://github.com/facebook/react/issues/16604#issuecomment-528663101)
+- [My Wishlist for Hot Reloading](https://overreacted.io/my-wishlist-for-hot-reloading/)
+- [React Native docs about Fast Refresh](https://reactnative.dev/docs/fast-refresh)
+- [ReactFreshBabelPlugin](https://github.com/facebook/react/blob/main/packages/react-refresh/src/ReactFreshBabelPlugin.js)
+- [handleHotUpdate in Vite](https://vitejs.dev/guide/api-plugin.html#handlehotupdate)
+- [HMR API in Vite](https://vitejs.dev/guide/api-hmr.html)
 
-[How Does setState Know What to Do?
-](https://overreacted.io/how-does-setstate-know-what-to-do/)
+### Later
 
-[The how and why on React’s usage of linked list in Fiber to walk the component’s tree](https://indepth.dev/posts/1007/the-how-and-why-on-reacts-usage-of-linked-list-in-fiber-to-walk-the-components-tree)
-
-[Inside Fiber: in-depth overview of the new reconciliation algorithm in React](https://indepth.dev/posts/1008/inside-fiber-in-depth-overview-of-the-new-reconciliation-algorithm-in-react)
-
-[In-depth explanation of state and props update in React
-](https://indepth.dev/posts/1009/in-depth-explanation-of-state-and-props-update-in-react)
-
-[Build your own React](https://pomb.us/build-your-own-react/)
-
-[XSS via a spoofed React element](http://danlec.com/blog/xss-via-a-spoofed-react-element)
+- Read more about [Reconcilliation](https://reactjs.org/docs/reconciliation.html)
+- Implement support for [Code-splitting](https://reactjs.org/docs/code-splitting.html)
+- [Forwarding refs](https://reactjs.org/docs/forwarding-refs.html)
+- [Portals](https://reactjs.org/docs/jsx-in-depth.html)

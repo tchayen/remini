@@ -1,7 +1,7 @@
-import { createElement as c, RElement, useState } from "../../../lib";
+import { createElement as c, RElement, useState } from "../../../../lib";
 import Avatar from "./Avatar";
-import { TEXT_PRIMARY, TEXT_SECONDARY } from "./constants";
-import { users } from "./data";
+import { TEXT_PRIMARY, TEXT_SECONDARY } from "../constants";
+import { users } from "../data";
 
 const Author = ({ author }: { author: number }): RElement => {
   const [show, setShow] = useState(false);
