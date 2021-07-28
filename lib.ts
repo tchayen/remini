@@ -15,6 +15,8 @@ import {
   RNode,
 } from "./types";
 
+export type { RElement } from "./types";
+
 // const Avatar = ({ author }: { author: number }) => {
 //   return createElement("div", { class: "123" }, author.toString());
 // };
@@ -22,6 +24,27 @@ import {
 // createElement(Avatar, { author: 1 });
 
 // type FirstArgument<T> = T extends (arg1: infer U) => RElement ? U : any;
+
+export let _rootNode: HostNode | null = null;
+
+let _currentNode: RNode | null = null;
+let _hookIndex = 0;
+let _currentHost: HostType<any, any> | null = null;
+const contextValues: Map<Context<any>, any> = new Map();
+
+type Job = {
+  node: RNode;
+  element: RElement | null;
+};
+
+type UpdateConfig = {
+  Host: HostType<any, any>;
+  isHydrating?: boolean;
+};
+
+let updating = false;
+const tasks: Job[] = [];
+const effects: (() => void)[] = [];
 
 export function createElement(
   component: ComponentType,
@@ -88,12 +111,6 @@ export function createElement(
 
   throw new Error("Something went wrong.");
 }
-
-let _currentNode: RNode | null = null;
-let _hookIndex = 0;
-let _currentHost: HostType<any, any> | null = null;
-
-const contextValues: Map<Context<any>, any> = new Map();
 
 const update = (
   node: RNode,
@@ -382,17 +399,6 @@ const update = (
   _currentHost = null;
 };
 
-type Job = { node: RNode; element: RElement | null };
-
-type UpdateConfig = {
-  Host: HostType<any, any>;
-  isHydrating?: boolean;
-};
-
-let updating = false;
-const tasks: Job[] = [];
-const effects: (() => void)[] = [];
-
 const runUpdateLoop = (
   node: RNode,
   element: RElement | null,
@@ -631,8 +637,6 @@ export const useContext = <T>(context: Context<T>): T => {
   return hook.context;
 };
 
-export let _rootNode: HostNode | null = null;
-
 export const render = (element: RElement, container: HTMLElement): void => {
   _rootNode = {
     kind: NodeType.HOST,
@@ -650,7 +654,7 @@ export const render = (element: RElement, container: HTMLElement): void => {
   });
 };
 
-const print = (node: SSRNode | string): string => {
+const printSSRTree = (node: SSRNode | string): string => {
   if (typeof node === "string") {
     return node;
   }
@@ -661,7 +665,7 @@ const print = (node: SSRNode | string): string => {
     .map((key) => `${key}="${node.attributes[key]}"`)
     .join(" ");
 
-  const children = node.children.map((child) => print(child)).join("");
+  const children = node.children.map((child) => printSSRTree(child)).join("");
 
   return `<${node.tag}${optionalSpace}${attributes}>${children}</${node.tag}>`;
 };
@@ -683,7 +687,7 @@ export const renderToString = (element: RElement): string => {
     Host: SSRHost,
   });
 
-  return print(_rootNode.native);
+  return printSSRTree(_rootNode.native);
 };
 
 export const hydrate = (element: RElement, container: HTMLElement): void => {
@@ -704,8 +708,10 @@ export const hydrate = (element: RElement, container: HTMLElement): void => {
     Host: DomHost,
     isHydrating: true,
   });
+  _node = null;
 };
 
+// TODO: move somewhere outside.
 let _node: Node | null = null;
 const getNextNode = () => {
   if (_node === null) {

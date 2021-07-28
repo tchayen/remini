@@ -33,7 +33,8 @@ render(c(Counter), document.getElementById("root"));
 - [x] `ref`s
 - [x] Context API
 - [x] `<Fragment />`
-- [ ] SSR
+- [x] SSR
+- [ ] Fast refresh
 
 ## Useful reading
 
@@ -52,10 +53,16 @@ render(c(Counter), document.getElementById("root"));
 - [Dan Abramov's comment describing how to implement HMR](https://github.com/facebook/react/issues/16604#issuecomment-528663101)
 - [My Wishlist for Hot Reloading](https://overreacted.io/my-wishlist-for-hot-reloading/)
 - [React Native docs about Fast Refresh](https://reactnative.dev/docs/fast-refresh)
-- [ReactFreshBabelPlugin](https://github.com/facebook/react/blob/main/packages/react-refresh/src/ReactFreshBabelPlugin.js)
 - [handleHotUpdate in Vite](https://vitejs.dev/guide/api-plugin.html#handlehotupdate)
-- [HMR API in Vite](https://vitejs.dev/guide/api-hmr.html)
+- [HMR API docs in Vite](https://vitejs.dev/guide/api-hmr.html)
 
+#### Actual implementations
+
+- [Preact's refresh plugin](https://github.com/preactjs/prefresh)
+- [React Refresh package](https://github.com/facebook/react/blob/main/packages/react-refresh)
+- [Vite plugin-react-refresh](https://github.com/vitejs/vite/blob/main/packages/plugin-react-refresh)
+- [Description how tagging with signatures work](https://github.com/facebook/react/issues/20417#issuecomment-807823533)
+-
 ### Later
 
 - Read more about [Reconcilliation](https://reactjs.org/docs/reconciliation.html)

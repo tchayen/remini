@@ -6,12 +6,14 @@
     "build": "vite build",
     "serve": "vite preview",
     "ssr": "node src/server",
-    "build-styles": "tailwindcss -o build.css"
+    "build-styles": "NODE_ENV=production yarn run postcss style.css -o build.css"
   },
   "devDependencies": {
     "autoprefixer": "^10.3.1",
+    "cssnano": "^5.0.7",
     "express": "^4.17.1",
     "postcss": "^8.3.6",
+    "postcss-cli": "^8.3.1",
     "tailwindcss": "^2.2.7",
     "vite": "^2.4.3"
   }

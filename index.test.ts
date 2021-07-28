@@ -534,9 +534,9 @@ describe("useEffect", () => {
     );
   });
 
-  it("works with comparing deps array", () => {
-    // TODO: trigger a change and make sure it doesn't trigger useEffect if
-    //should not be changed.
+  xit("works with comparing deps array", () => {
+    // TODO
+    // trigger a change and make sure it doesn't trigger useEffect if should not be changed.
   });
 
   it("works with callback", () => {
@@ -566,6 +566,10 @@ describe("useEffect", () => {
 
     expect(mock).toHaveBeenCalledTimes(1);
     expect(document.body.innerHTML).toBe("<div><div></div></div>");
+  });
+
+  xit("works with calling callback in a deeply nested component", () => {
+    // TODO
   });
 
   it("works with two different effects in a component", () => {
@@ -1102,6 +1106,10 @@ describe("DOM", () => {
     expect(document.body.innerHTML).toBe("<div><div>test</div></div>");
   });
 
+  xit("has props that are gone removed from DOM", () => {
+    // TODO
+  });
+
   it("has text removed when replaced", () => {
     const root = document.createElement("div");
     document.body.appendChild(root);
@@ -1268,13 +1276,7 @@ describe("DOM", () => {
   });
 });
 
-// TODO tests:
-// - UseEffect with change in dependencies array
-// - Trigger node update that results in prop removal
-// - Trigger node update that results in prop update (not addition)
-// - Create <svg> element
-
-describe("ssr", () => {
+describe("SSR", () => {
   it("works", () => {
     const Counter = () => {
       const [count, setCount] = useState(0);
