@@ -1318,16 +1318,19 @@ describe("ssr", () => {
 
     const root = document.getElementById("root");
 
-    hydrate(tree, root!);
+    if (root === null) {
+      throw new Error("Unexpected null.");
+    }
+
+    hydrate(tree, root);
 
     const button = document.getElementById("button");
+
+    if (button === null) {
+      throw new Error("Unexpected null.");
+    }
+
     button.click();
     expect(mock).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe("getNextNode", () => {
-  it("", () => {
-    //
   });
 });

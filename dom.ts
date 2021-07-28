@@ -1,4 +1,4 @@
-import { HostElement, HostNode, NodeType, RNode, TextNode } from "./lib";
+import { HostElement, HostNode, NodeType, RNode, TextNode } from "./types";
 import {
   eventToKeyword,
   isEvent,

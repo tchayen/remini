@@ -1,7 +1,12 @@
 import "../style.css";
-import { createElement as c, render } from "../../../lib";
-import App from "./App";
+import { createElement as c, hydrate } from "../../../lib";
+import App from "./components/App";
 
 const root = document.getElementById("root");
 const tree = c(App);
-render(tree, root);
+
+if (root === null) {
+  throw new Error("Root <div> not found");
+}
+
+hydrate(tree, root);

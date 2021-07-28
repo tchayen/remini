@@ -1,12 +1,12 @@
-import { createElement as c, useEffect, useState } from "../../../lib";
-import { getFriendlyTime } from "./date";
+import { createElement as c, useEffect, useState } from "../../../../lib";
+import { getFriendlyTime } from "../utils/date";
 import Author from "./Author";
 import Avatar from "./Avatar";
-import { LOADING_TIME, TEXT_SECONDARY } from "./constants";
-import { posts, PostType, users } from "./data";
+import { LOADING_TIME, TEXT_SECONDARY } from "../constants";
+import { posts, PostType, users } from "../data";
 import LoginForm from "./LoginForm";
 import { SessionContext } from "./SessionContext";
-import AutoScale from "./ui/AutoScale";
+import AutoScale from "../ui/AutoScale";
 
 const Post = ({ author, content, timestamp }: PostType) => {
   const time = getFriendlyTime(new Date(timestamp * 1000));

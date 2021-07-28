@@ -1,144 +1,19 @@
 import { Host as DomHost } from "./dom";
 import { SSRNode, Host as SSRHost } from "./ssr";
-
-type HostType<T, R> = {
-  findClosestComponent: (node: RNode) => ComponentNode | null;
-  findClosestHostNode: (node: RNode) => HostNode;
-  createHostNode: (element: HostElement) => T;
-  updateHostNode: (current: HostNode, expected: HostElement) => void;
-  removeHostNode: (hostNode: RNode) => void;
-  appendChild: (parent: T, child: T) => void;
-  createTextNode: (text: string) => R;
-  updateTextNode: (current: TextNode, text: string) => void;
-};
-
-type Children = RElement[] | string | null;
-
-type ElementProps = {
-  children: RElement[];
-  [key: string]: any;
-};
-
-type Props = {
-  [key: string]: any;
-  style?: Record<string, unknown> | string;
-};
-
-export type RenderFunction = (props: any) => RElement;
-
-export type ComponentType = RenderFunction | string;
-
-export enum NodeType {
-  COMPONENT = 1,
-  HOST = 2,
-  TEXT = 3,
-  PROVIDER = 4,
-  NULL = 5,
-  FRAGMENT = 6,
-}
-
-export type ComponentElement = {
-  kind: NodeType.COMPONENT;
-  render: RenderFunction;
-  props: ElementProps;
-};
-
-export type ComponentNode = ComponentElement & {
-  parent: RNode | null;
-  descendants: RNode[];
-  hooks: Hook[];
-};
-
-export type HostElement = {
-  kind: NodeType.HOST;
-  tag: string;
-  props: ElementProps;
-};
-
-export type HostNode = HostElement & {
-  parent: RNode | null;
-  descendants: RNode[];
-  native: any;
-};
-
-export type TextElement = {
-  kind: NodeType.TEXT;
-  content: string;
-};
-
-export type TextNode = TextElement & {
-  parent: RNode | null;
-  native: any;
-};
-
-export type ProviderElement = {
-  kind: NodeType.PROVIDER;
-  props: ElementProps;
-};
-
-export type ProviderNode = ProviderElement & {
-  parent: RNode | null;
-  context: Context<any>;
-  descendants: RNode[];
-};
-
-export type FragmentElement = {
-  kind: NodeType.FRAGMENT;
-  props: ElementProps;
-};
-
-export type FragmentNode = FragmentElement & {
-  parent: RNode | null;
-  descendants: RNode[];
-};
-
-export type RElement =
-  | ComponentElement
-  | HostElement
-  | TextElement
-  | ProviderElement
-  | FragmentElement;
-
-export type RNode =
-  | ComponentNode
-  | HostNode
-  | TextNode
-  | ProviderNode
-  | FragmentNode;
-
-enum HookType {
-  STATE = 1,
-  EFFECT = 2,
-  REF = 3,
-  CONTEXT = 4,
-  MEMO = 5,
-}
-
-type StateHook = {
-  type: HookType.STATE;
-  state: any;
-};
-
-type EffectHook = {
-  type: HookType.EFFECT;
-  cleanup: (() => void) | undefined;
-  dependencies?: any[];
-};
-type RefHook = {
-  type: HookType.REF;
-  current: any;
-};
-type ContextHook = {
-  type: HookType.CONTEXT;
-  context: any;
-};
-type MemoHook = {
-  type: HookType.MEMO;
-  memo: any;
-  dependencies?: any[];
-};
-
-export type Hook = StateHook | EffectHook | RefHook | ContextHook | MemoHook;
+import {
+  Children,
+  ComponentType,
+  Context,
+  EffectHook,
+  HookType,
+  HostNode,
+  HostType,
+  NodeType,
+  Props,
+  ProviderProps,
+  RElement,
+  RNode,
+} from "./types";
 
 // const Avatar = ({ author }: { author: number }) => {
 //   return createElement("div", { class: "123" }, author.toString());
@@ -727,12 +602,6 @@ export const useMemo = <T>(callback: () => T, dependencies: any[]): T => {
   return hook.memo;
 };
 
-type ProviderProps<T> = { value: T };
-
-type Context<T> = {
-  Provider: ({ value }: ProviderProps<T>) => RElement;
-};
-
 export const createContext = <T>(): Context<T> => {
   const context: any = {};
 
@@ -836,7 +705,7 @@ export const hydrate = (element: RElement, container: HTMLElement): void => {
     descendants: [],
   };
 
-  _node = container.firstChild;
+  _node = container.firstChild as Node;
 
   runUpdateLoop(_rootNode, createElement("div", {}, element), {
     Host: DomHost,
@@ -844,9 +713,11 @@ export const hydrate = (element: RElement, container: HTMLElement): void => {
   });
 };
 
-let _node: Node = null;
-export const getNextNode = () => {
-  if (_node.firstChild) {
+let _node: Node | null = null;
+const getNextNode = () => {
+  if (_node === null) {
+    return;
+  } else if (_node.firstChild) {
     _node = _node.firstChild;
   } else if (_node.nextSibling) {
     _node = _node.nextSibling;

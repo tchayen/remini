@@ -1,5 +1,5 @@
 import { createElement as c, renderToString } from "../../../lib";
-import App from "../../website/src/App";
+import App from "../../website/src/components/App";
 
 const PORT = 4000;
 
@@ -34,7 +34,7 @@ app.use(async (ctx) => {
     </style>
   </head>
   <body>
-    <div id="root"></div>
+    ${html}
     <script type="module" src="http://localhost:3000/src/index.ts"></script>
   </body>
 </html>
