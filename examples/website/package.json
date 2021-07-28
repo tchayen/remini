@@ -5,15 +5,14 @@
     "dev": "vite",
     "build": "vite build",
     "serve": "vite preview",
-    "ssr": "node src/server"
+    "ssr": "node src/server",
+    "build-styles": "tailwindcss -o build.css"
   },
   "devDependencies": {
     "autoprefixer": "^10.3.1",
+    "express": "^4.17.1",
     "postcss": "^8.3.6",
     "tailwindcss": "^2.2.7",
     "vite": "^2.4.3"
-  },
-  "dependencies": {
-    "express": "^4.17.1"
   }
 }

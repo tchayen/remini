@@ -277,7 +277,6 @@ const update = (
       update(newNode, expected, config);
     } else if (!current && expected !== undefined) {
       // ADD
-
       let newNode: RNode;
       if (expected.kind === NodeType.COMPONENT) {
         newNode = {
