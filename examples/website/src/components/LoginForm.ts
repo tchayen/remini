@@ -3,7 +3,7 @@ import {
   RElement,
   useContext,
   useState,
-} from "../../../../lib";
+} from "../../../../packages/remini/lib";
 import Button from "../ui/Button";
 import { LOADING_TIME, TEXT_PRIMARY, TEXT_SECONDARY } from "../constants";
 import Input from "../ui/Input";

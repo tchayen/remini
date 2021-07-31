@@ -55,6 +55,7 @@ render(c(Counter), document.getElementById("root"));
 - [React Native docs about Fast Refresh](https://reactnative.dev/docs/fast-refresh)
 - [handleHotUpdate in Vite](https://vitejs.dev/guide/api-plugin.html#handlehotupdate)
 - [HMR API docs in Vite](https://vitejs.dev/guide/api-hmr.html)
+- [Babel Plugin Handbook](https://github.com/jamiebuilds/babel-handbook/blob/master/translations/en/plugin-handbook.md)
 
 #### Actual implementations
 
@@ -62,10 +63,11 @@ render(c(Counter), document.getElementById("root"));
 - [React Refresh package](https://github.com/facebook/react/blob/main/packages/react-refresh)
 - [Vite plugin-react-refresh](https://github.com/vitejs/vite/blob/main/packages/plugin-react-refresh)
 - [Description how tagging with signatures work](https://github.com/facebook/react/issues/20417#issuecomment-807823533)
--
+
 ### Later
 
 - Read more about [Reconcilliation](https://reactjs.org/docs/reconciliation.html)
 - Implement support for [Code-splitting](https://reactjs.org/docs/code-splitting.html)
 - [Forwarding refs](https://reactjs.org/docs/forwarding-refs.html)
 - [Portals](https://reactjs.org/docs/jsx-in-depth.html)
+- [Server components](https://github.com/josephsavona/rfcs/blob/server-components/text/0000-server-components.md)

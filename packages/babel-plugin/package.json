@@ -1,0 +1,7 @@
+{
+  "name": "babel-plugin",
+  "version": "0.0.0",
+  "devDependencies": {
+    "jest": "^27.0.6"
+  }
+}
