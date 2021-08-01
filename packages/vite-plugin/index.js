@@ -1,5 +1,11 @@
-import { transformSync } from "@babel/core";
-import babelPlugin from "../babel-plugin";
+const fs = require("fs");
+const path = require("path");
+const { transformSync } = require("@babel/core");
+const babelPlugin = require("../babel-plugin");
+
+const runtimePublicPath = "/@fast-refresh";
+const runtimeFilePath = path.join(__dirname, "../babel-plugin/runtime.js");
+const runtimeCode = fs.readFileSync(runtimeFilePath, "utf-8");
 
 function isComponentLikeIdentifier(node) {
   return (
@@ -8,6 +14,21 @@ function isComponentLikeIdentifier(node) {
     /^[A-Z]/.test(node.name)
   );
 }
+
+const preambleCode = `
+import RefreshRuntime from "${runtimePublicPath}"
+// RefreshRuntime.injectIntoGlobalHook(window)
+window.$RefreshReg$ = () => {}
+window.$RefreshSig$ = () => (type) => type
+window.__refresh_plugin_enabled__ = true
+`;
+
+const cleanIndent = (code) => {
+  const lines = code.split("\n");
+  const firstLine = lines[0].length === 0 ? 1 : 0;
+  const offset = lines[firstLine].match(/^(\s*)/)[0].length;
+  return lines.map((line) => line.substring(offset, line.length)).join("\n");
+};
 
 // If every export is a component, we can assume it's a refresh boundary.
 function isRefreshBoundary(ast) {
@@ -42,8 +63,33 @@ function refreshPlugin() {
 
   return {
     name: "refresh",
+    enforce: "pre",
     configResolved(config) {
       shouldSkip = config.command === "build" || config.isProduction;
+    },
+    resolveId(id) {
+      if (id === runtimePublicPath) {
+        return id;
+      }
+    },
+
+    load(id) {
+      if (id === runtimePublicPath) {
+        return runtimeCode;
+      }
+    },
+    transformIndexHtml() {
+      if (shouldSkip) {
+        return;
+      }
+
+      return [
+        {
+          tag: "script",
+          attrs: { type: "module" },
+          children: preambleCode,
+        },
+      ];
     },
     async transform(code, id, ssr) {
       if (
@@ -56,8 +102,6 @@ function refreshPlugin() {
         return;
       }
 
-      console.log(id.replace(__dirname, ""), ssr);
-
       const parserPlugins = [/\.tsx?$/.test(id) && "typescript"];
 
       const result = transformSync(code, {
@@ -69,7 +113,9 @@ function refreshPlugin() {
           allowAwaitOutsideFunction: true,
           plugins: parserPlugins,
         },
-        plugins: [babelPlugin],
+        plugins: [
+          // babelPlugin
+        ],
         ast: true,
         sourceMaps: true,
         sourceFileName: id,
@@ -84,31 +130,45 @@ function refreshPlugin() {
         return code;
       }
 
-      const header = `
-        if (import.meta.hot) {
-          // Set up HMR here.
-          console.log('> ${id.replace(__dirname, "")}');
-        }
-      `;
+      const header = cleanIndent(`
+        import RefreshRuntime from "${runtimePublicPath}";
+        let prevRefreshReg;
+        let prevRefreshSig;
 
-      const footer = `
+        if (!__refresh_plugin_enabled__) {
+          throw new Error("Refresh plugin can't detect initialization code.");
+        }
+
         if (import.meta.hot) {
+          prevRefreshReg = window.$RefreseshReg$;
+          prevRefreshSig = window.$RefreshSig$;
+          window.$RefreshReg$ = (type, id) => {
+            RefreshRuntime.register(type, ${JSON.stringify(id)} + " " + id);
+          };
+          // window.$RefreshSig$ = RefreshRuntime.createSignatureFunctionForTransform;
+        }
+        // </FastRefreshHeader>
+      `);
+
+      const footer = cleanIndent(`
+        // <FastRefreshFooter>
+        if (import.meta.hot) {
+          window.$RefreshReg$ = prevRefreshReg;
+          window.$RefreshSig$ = prevRefreshSig;
+
           if (${isRefreshBoundary(result.ast)}) {
             import.meta.hot.accept();
-            console.log('HOT ${id.replace(__dirname, "")}');
-          } else {
-            console.log('not ${id.replace(__dirname, "")}');
+            console.log('HOT ${id}');
           }
 
           if (!window.__refresh_timeout) {
             window.__refresh_timeout = setTimeout(() => {
               window.__refresh_timeout = 0;
-              // TODO: refresh.
-              console.log('Refresh');
+              RefreshRuntime.performReactRefresh();
             }, 30);
           }
         }
-      `;
+      `);
 
       return {
         code: `${header}${result.code}${footer}`,

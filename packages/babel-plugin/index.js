@@ -6,8 +6,8 @@ function isComponentLikeName(name) {
 export default function babelPlugin(babel) {
   const { types: t } = babel;
 
-  const refreshSig = t.identifier("$refreshSig$");
-  const refreshReg = t.identifier("$refreshReg$");
+  const refreshSig = t.identifier("$RefreshSig$");
+  const refreshReg = t.identifier("$RefreshReg$");
 
   const registrationsByProgramPath = new Map();
 
