@@ -79,6 +79,11 @@ function refreshPlugin() {
         throw new Error("Babel transformation didn't succeed.");
       }
 
+      // No component detected in the file.
+      if (!/\$RefreshReg\$\(/.test(result.code)) {
+        return code;
+      }
+
       const header = `
         if (import.meta.hot) {
           // Set up HMR here.
