@@ -6,6 +6,9 @@ function isComponentLikeName(name) {
 export default function babelPlugin(babel) {
   const { types: t } = babel;
 
+  const refreshSig = t.identifier("$refreshSig$");
+  const refreshReg = t.identifier("$refreshReg$");
+
   const registrationsByProgramPath = new Map();
 
   // function createRegistration(programPath: NodePath<Program>, persistentID) {
@@ -25,28 +28,72 @@ export default function babelPlugin(babel) {
     visitor: {
       ExportDefaultDeclaration(path) {
         const node = path.node;
-        const id = node.id;
-        console.log("ExportDefaultDeclaration", id);
+        console.log(
+          "ExportDefaultDeclaration",
+          node.id || node.declaration.name
+        );
       },
-      FunctionDeclaration(path) {
-        const node = path.node;
-        const id = node.id;
-        const inferredName = id.name;
+      FunctionDeclaration: {
+        exit(path) {
+          const node = path.node;
+          const id = node.id;
+          const inferredName = id.name;
 
-        console.log("FunctionDeclaration.enter", { inferredName });
-        if (!isComponentLikeName(inferredName)) {
-          return;
-        }
+          console.log("FunctionDeclaration", inferredName);
+          if (!isComponentLikeName(inferredName)) {
+            return;
+          }
 
-        // if (seenForRegistration.has(node)) {
-        //   return;
-        // }
-        // seenForRegistration.add(node);
+          const sigCallId = path.scope.generateUidIdentifier("s");
+          // var _s = $$refreshSig$$().
+          path.scope.parent.push({
+            id: sigCallId,
+            init: t.callExpression(refreshSig, []),
+          });
 
-        // const handle = createRegistration(programPath, persistentID);
+          // _s() inside component.
+          path
+            .get("body")
+            .unshiftContainer(
+              "body",
+              t.expressionStatement(t.callExpression(sigCallId, []))
+            );
+
+          // _s(App, "TODO#1") after component.
+          path.insertAfter(
+            t.expressionStatement(
+              t.callExpression(sigCallId, [id, t.stringLiteral("TODO#1")])
+            )
+          );
+        },
+      },
+      ArrowFunctionExpression(path) {
+        console.log("ArrowFunctionExpression");
+      },
+      FunctionExpression(path) {
+        console.log("FunctionExpression");
+      },
+      ExportNamedDeclaration(path) {
+        console.log("ExportNamedDeclaration");
       },
       Program: {
-        exit(path) {},
+        exit(path) {
+          const cCallId = path.scope.generateUidIdentifier("c");
+
+          // var _c = App. TODO assignment.
+          path.pushContainer(
+            "body",
+            t.variableDeclaration("var", [t.variableDeclarator(cCallId)])
+          );
+
+          // $RefreshReg$(_c, "TODO#2");
+          path.pushContainer(
+            "body",
+            t.expressionStatement(
+              t.callExpression(refreshReg, [cCallId, t.stringLiteral("TODO#2")])
+            )
+          );
+        },
       },
     },
   };

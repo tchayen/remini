@@ -1,7 +1,12 @@
 {
   "name": "babel-plugin",
   "version": "0.0.0",
+  "scripts": {
+    "test": "jest --watch"
+  },
   "devDependencies": {
+    "@babel/core": "^7.14.8",
+    "@babel/preset-env": "^7.14.8",
     "jest": "^27.0.6"
   }
 }

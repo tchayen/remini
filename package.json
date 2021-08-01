@@ -1,0 +1,8 @@
+{
+  "private": true,
+  "workspaces": [
+    "packages/babel-plugin",
+    "packages/remini",
+    "packages/vite-plugin"
+  ]
+}
