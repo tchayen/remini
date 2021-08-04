@@ -46,7 +46,7 @@ const REACT_FR = `
     if (!window.__vite_plugin_react_timeout) {
       window.__vite_plugin_react_timeout = setTimeout(() => {
         window.__vite_plugin_react_timeout = 0;
-        RefreshRuntime.performReactRefresh();
+        RefreshRuntime.performRefresh();
       }, 30);
     }
   }

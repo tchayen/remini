@@ -1,7 +1,3 @@
-// TODO
-// Follow preact's approach - replaceComponent(oldType, newType) and then
-// rerender nodes similar way as now, but preserving hooks array.
-
 let pendingUpdates = [];
 let isPerformingRefresh = false;
 
@@ -14,31 +10,20 @@ function injectIntoGlobalHook() {
 }
 
 // Also known as $RefreshReg$.
-function register(render) {
+function register(render, id, name, hooks) {
   console.log("register()");
 
   if (render === null) {
     return;
   }
 
-  pendingUpdates.push([render.$id$, render]);
+  render.$id$ = `${id}-${name}`;
+  render.$hooks$ = hooks;
+  pendingUpdates.push([render.$id$, render, hooks]);
 }
 
-// Also known as $RefreshSig$.
-function createSignatureFunctionForTransform() {
-  console.log("createSignatureFunctionForTransform()");
-
-  return function (type, key) {
-    if (typeof key === "string") {
-      // In the _s("App", "123") call
-    } else {
-      // In the _s call.
-    }
-  };
-}
-
-function performReactRefresh() {
-  console.log("performReactRefresh()");
+function performRefresh() {
+  console.log("performRefresh()");
 
   if (pendingUpdates.length === 0) {
     return;
@@ -49,20 +34,21 @@ function performReactRefresh() {
   }
 
   isPerformingRefresh = true;
-  // TODO destructure [id, render]
-
-  pendingUpdates.forEach(([id, render]) => {
+  pendingUpdates.forEach(([id, render, hooks]) => {
     const nodes = __COMPONENT_TO_NODE__.get(id);
 
     if (!nodes) {
       return;
     }
 
-    console.log({ nodes });
-
     nodes.forEach((node) => {
-      console.log(2, node);
+      if (node.render.$hooks$ !== hooks) {
+        console.log(id, "old: ", node.render.$hooks$, "new: ", hooks);
+        // TODO: replace hooks.
+      }
+
       node.render = render;
+
       window.__UPDATE__(node, null);
     });
   });
@@ -73,6 +59,5 @@ function performReactRefresh() {
 export default {
   injectIntoGlobalHook,
   register,
-  createSignatureFunctionForTransform,
-  performReactRefresh,
+  performRefresh,
 };

@@ -27,7 +27,6 @@ const preambleCode = `
 import RefreshRuntime from "${runtimePublicPath}"
 // RefreshRuntime.injectIntoGlobalHook(window);
 window.$RefreshReg$ = () => {};
-window.$RefreshSig$ = () => (type) => type;
 window.$id$ = () => {};
 window.__REFRESH_PLUGIN_ENABLED__ = true;
 `;
@@ -143,7 +142,6 @@ function refreshPlugin() {
       const header = cleanIndent(`
         import RefreshRuntime from "${runtimePublicPath}";
         let prevRefreshReg;
-        let prevRefreshSig;
         let prevId;
 
         if (!__REFRESH_PLUGIN_ENABLED__) {
@@ -152,14 +150,12 @@ function refreshPlugin() {
 
         if (import.meta.hot) {
           prevRefreshReg = window.$RefreseshReg$;
-          prevRefreshSig = window.$RefreshSig$;
           prevId = window.$id$;
-          window.$RefreshReg$ = (type, id) => {
-            RefreshRuntime.register(type, ${JSON.stringify(id)} + " " + id);
+          window.$RefreshReg$ = (render, id, name, hooks) => {
+            RefreshRuntime.register(render, id, name, hooks);
           };
-          window.$RefreshSig$ = RefreshRuntime.createSignatureFunctionForTransform;
-          window.$id$ = (id) => {
-            return \`${id} $\{id}\`;
+          window.$id$ = () => {
+            return '${id}';
           };
         }
         // </FastRefreshHeader>
@@ -169,7 +165,6 @@ function refreshPlugin() {
         // <FastRefreshFooter>
         if (import.meta.hot) {
           window.$RefreshReg$ = prevRefreshReg;
-          window.$RefreshSig$ = prevRefreshSig;
 
           if (${isRefreshBoundary(result.ast)}) {
             import.meta.hot.accept();
@@ -179,7 +174,7 @@ function refreshPlugin() {
           if (!window.__REFRESH_TIMEOUT__) {
             window.__REFRESH_TIMEOUT__ = setTimeout(() => {
               window.__REFRESH_TIMEOUT__ = 0;
-              RefreshRuntime.performReactRefresh();
+              RefreshRuntime.performRefresh();
             }, 30);
           }
         }
