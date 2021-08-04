@@ -43,8 +43,37 @@ function performRefresh() {
 
     nodes.forEach((node) => {
       if (node.render.$hooks$ !== hooks) {
-        console.log(id, "old: ", node.render.$hooks$, "new: ", hooks);
-        // TODO: replace hooks.
+        if (node.hooks) {
+          for (let i = 0; i < node.hooks.length; i++) {
+            if (node.hooks[i].type === 1) {
+              // 1 means HookType.STATE
+              // Reset state.
+              node.hooks[i] = undefined;
+            } else if (node.hooks[i].type === 2) {
+              // 2 means HookType.EFFECT
+              if (node.hooks[i].dependencies) {
+                const callback = node.hooks[i].cleanup;
+                if (typeof callback === "function") {
+                  callback();
+                }
+                node.hooks[i] = undefined;
+              }
+            } else if (node.hooks[i].type === 3) {
+              // 3 means HookType.REF
+              // createElement(...) structure could be changed. Better regenerate.
+              node.hooks[i] = undefined;
+            } else if (node.hooks[i].type === 4) {
+              // 4 means HookType.CONTEXT
+              // Probably no action needed.
+            } else if (node.hooks[i].type === 5) {
+              // 5 means HookType.MEMO
+              // Run memos with deps again.
+              if (node.hooks[i].dependencies) {
+                node.hooks[i] = undefined;
+              }
+            }
+          }
+        }
       }
 
       node.render = render;

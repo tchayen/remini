@@ -156,7 +156,10 @@ const update = (
       const currentValue = contextValues.get(node.context);
 
       if (currentValue) {
-        replacedContext = { context: node.context, value: currentValue };
+        replacedContext = {
+          context: node.context,
+          value: currentValue,
+        };
       }
 
       contextValues.set(node.context, { value: node.props.value });
@@ -543,7 +546,10 @@ export const useState = <T>(
   }
 
   if (c.hooks[i] === undefined) {
-    c.hooks[i] = { type: HookType.STATE, state: initial };
+    c.hooks[i] = {
+      type: HookType.STATE,
+      state: initial,
+    };
   }
 
   const hook = c.hooks[i];
@@ -580,7 +586,10 @@ export const useRef = <T>(): { current: T | null } => {
 
   let ref = _currentNode.hooks[_hookIndex];
   if (ref === undefined) {
-    ref = { type: HookType.REF, current: null };
+    ref = {
+      type: HookType.REF,
+      current: null,
+    };
     _currentNode.hooks[_hookIndex] = ref;
   }
 
