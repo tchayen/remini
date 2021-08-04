@@ -3,8 +3,15 @@ const path = require("path");
 const { transformSync } = require("@babel/core");
 const babelPlugin = require("../babel-plugin");
 
+// /@fast-refresh is arbitrary, the only part that matters is the initial /.
+// It then gets resolved by resolveId() which then is recognized by load()
+// function.
 const runtimePublicPath = "/@fast-refresh";
+
+// path.join is used to resolve path locally to this file and not the directory
+// in which plugin is currently running.
 const runtimeFilePath = path.join(__dirname, "../babel-plugin/runtime.js");
+
 const runtimeCode = fs.readFileSync(runtimeFilePath, "utf-8");
 
 function isComponentLikeIdentifier(node) {
@@ -15,16 +22,20 @@ function isComponentLikeIdentifier(node) {
   );
 }
 
+// This initializing code is injected in transformIndexHtml().
 const preambleCode = `
 import RefreshRuntime from "${runtimePublicPath}"
-// RefreshRuntime.injectIntoGlobalHook(window)
-window.$RefreshReg$ = () => {}
-window.$RefreshSig$ = () => (type) => type
-window.__refresh_plugin_enabled__ = true
+// RefreshRuntime.injectIntoGlobalHook(window);
+window.$RefreshReg$ = () => {};
+window.$RefreshSig$ = () => (type) => type;
+window.$id$ = () => {};
+window.__REFRESH_PLUGIN_ENABLED__ = true;
 `;
 
 const cleanIndent = (code) => {
   const lines = code.split("\n");
+  // First line is often immediately followed by new line and is not
+  // representative of the whitespace in the snippet.
   const firstLine = lines[0].length === 0 ? 1 : 0;
   const offset = lines[firstLine].match(/^(\s*)/)[0].length;
   return lines.map((line) => line.substring(offset, line.length)).join("\n");
@@ -59,7 +70,7 @@ function isRefreshBoundary(ast) {
 function refreshPlugin() {
   let shouldSkip = false;
 
-  console.log("Plugin loaded");
+  console.log("Plugin loaded.");
 
   return {
     name: "refresh",
@@ -102,6 +113,7 @@ function refreshPlugin() {
         return;
       }
 
+      // Potentially might require adding JSX or decorators support in future.
       const parserPlugins = [/\.tsx?$/.test(id) && "typescript"];
 
       const result = transformSync(code, {
@@ -113,9 +125,7 @@ function refreshPlugin() {
           allowAwaitOutsideFunction: true,
           plugins: parserPlugins,
         },
-        plugins: [
-          // babelPlugin
-        ],
+        plugins: [babelPlugin],
         ast: true,
         sourceMaps: true,
         sourceFileName: id,
@@ -125,7 +135,7 @@ function refreshPlugin() {
         throw new Error("Babel transformation didn't succeed.");
       }
 
-      // No component detected in the file.
+      // No component detected in the file. Don't inject code.
       if (!/\$RefreshReg\$\(/.test(result.code)) {
         return code;
       }
@@ -134,18 +144,23 @@ function refreshPlugin() {
         import RefreshRuntime from "${runtimePublicPath}";
         let prevRefreshReg;
         let prevRefreshSig;
+        let prevId;
 
-        if (!__refresh_plugin_enabled__) {
+        if (!__REFRESH_PLUGIN_ENABLED__) {
           throw new Error("Refresh plugin can't detect initialization code.");
         }
 
         if (import.meta.hot) {
           prevRefreshReg = window.$RefreseshReg$;
           prevRefreshSig = window.$RefreshSig$;
+          prevId = window.$id$;
           window.$RefreshReg$ = (type, id) => {
             RefreshRuntime.register(type, ${JSON.stringify(id)} + " " + id);
           };
-          // window.$RefreshSig$ = RefreshRuntime.createSignatureFunctionForTransform;
+          window.$RefreshSig$ = RefreshRuntime.createSignatureFunctionForTransform;
+          window.$id$ = (id) => {
+            return \`${id} $\{id}\`;
+          };
         }
         // </FastRefreshHeader>
       `);
@@ -161,9 +176,9 @@ function refreshPlugin() {
             console.log('HOT ${id}');
           }
 
-          if (!window.__refresh_timeout) {
-            window.__refresh_timeout = setTimeout(() => {
-              window.__refresh_timeout = 0;
+          if (!window.__REFRESH_TIMEOUT__) {
+            window.__REFRESH_TIMEOUT__ = setTimeout(() => {
+              window.__REFRESH_TIMEOUT__ = 0;
               RefreshRuntime.performReactRefresh();
             }, 30);
           }

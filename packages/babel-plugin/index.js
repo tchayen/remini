@@ -24,75 +24,93 @@ export default function babelPlugin(babel) {
   //   return handle;
   // }
 
+  const analyzeBody = (path, name, insertPath) => {
+    const sigCallId = path.scope.generateUidIdentifier("s");
+
+    // var _s = $$refreshSig$$().
+    path.scope.parent.push({
+      id: sigCallId,
+      init: t.callExpression(refreshSig, []),
+    });
+
+    // _s() inside component.
+    path
+      .get("body")
+      .unshiftContainer(
+        "body",
+        t.expressionStatement(t.callExpression(sigCallId, []))
+      );
+
+    // Two next calls are in reversed order because of the way they are inserted.
+
+    // $RefreshReg$(A);
+    insertPath.insertAfter(t.callExpression(refreshReg, [t.identifier(name)]));
+
+    // A.$id$ = $id$("A");
+    insertPath.insertAfter(
+      t.assignmentExpression(
+        "=",
+        t.memberExpression(t.identifier(name), t.identifier("$id$")),
+        t.callExpression(t.identifier("$id$"), [t.stringLiteral(name)])
+      )
+    );
+  };
+
   return {
     visitor: {
       ExportDefaultDeclaration(path) {
-        const node = path.node;
-        console.log(
-          "ExportDefaultDeclaration",
-          node.id || node.declaration.name
-        );
+        //
       },
       FunctionDeclaration: {
         exit(path) {
-          const node = path.node;
-          const id = node.id;
-          const inferredName = id.name;
+          const name = path.node.id.name;
 
-          console.log("FunctionDeclaration", inferredName);
-          if (!isComponentLikeName(inferredName)) {
+          if (!isComponentLikeName(name)) {
             return;
           }
 
-          const sigCallId = path.scope.generateUidIdentifier("s");
-          // var _s = $$refreshSig$$().
-          path.scope.parent.push({
-            id: sigCallId,
-            init: t.callExpression(refreshSig, []),
-          });
+          console.log("FunctionDeclaration", name);
 
-          // _s() inside component.
-          path
-            .get("body")
-            .unshiftContainer(
-              "body",
-              t.expressionStatement(t.callExpression(sigCallId, []))
-            );
-
-          // _s(App, "TODO#1") after component.
-          path.insertAfter(
-            t.expressionStatement(
-              t.callExpression(sigCallId, [id, t.stringLiteral("TODO#1")])
-            )
-          );
+          analyzeBody(path, name, path);
         },
       },
-      ArrowFunctionExpression(path) {
-        console.log("ArrowFunctionExpression");
-      },
-      FunctionExpression(path) {
-        console.log("FunctionExpression");
-      },
       ExportNamedDeclaration(path) {
-        console.log("ExportNamedDeclaration");
+        //
+      },
+      VariableDeclaration(path) {
+        const name = path.node.declarations[0].id.name;
+
+        if (!isComponentLikeName(name)) {
+          return;
+        }
+
+        // switch (path.parent.type) {
+        //   case "Program":
+        //     console.log("Program");
+        //     break;
+        //   case "ExportNamedDeclaration":
+        //     console.log("ExportNamedDeclaration");
+        //     break;
+        //   case "ExportDefaultDeclaration":
+        //     console.log("ExportDefaultDeclaration");
+        //     break;
+        // }
+
+        console.log("VariableDeclaration", name);
+
+        const declarations = path.get("declarations")[0];
+        const init = declarations.get("init");
+        analyzeBody(init, name, path);
       },
       Program: {
         exit(path) {
           const cCallId = path.scope.generateUidIdentifier("c");
 
-          // var _c = App. TODO assignment.
-          path.pushContainer(
-            "body",
-            t.variableDeclaration("var", [t.variableDeclarator(cCallId)])
-          );
-
-          // $RefreshReg$(_c, "TODO#2");
-          path.pushContainer(
-            "body",
-            t.expressionStatement(
-              t.callExpression(refreshReg, [cCallId, t.stringLiteral("TODO#2")])
-            )
-          );
+          // // var _c = App. TODO assignment.
+          // path.pushContainer(
+          //   "body",
+          //   t.variableDeclaration("var", [t.variableDeclarator(cCallId)])
+          // );
         },
       },
     },

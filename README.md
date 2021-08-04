@@ -47,7 +47,7 @@ render(c(Counter), document.getElementById("root"));
 - [In-depth explanation of state and props update in React](https://indepth.dev/posts/1009/in-depth-explanation-of-state-and-props-update-in-react)
 - [Build your own React](https://pomb.us/build-your-own-react/)
 - [XSS via a spoofed React element](http://danlec.com/blog/xss-via-a-spoofed-react-element)
-
+- [What are the downsides of preact?](https://github.com/preactjs/preact/issues/2199)
 ### HMR
 
 - [Dan Abramov's comment describing how to implement HMR](https://github.com/facebook/react/issues/16604#issuecomment-528663101)

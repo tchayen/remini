@@ -112,7 +112,7 @@ export const updateTextNode = (node: TextNode, text: string): void => {
   node.native = text;
 };
 
-export const Host = {
+export const host = {
   findClosestComponent,
   createHostNode,
   findClosestHostNode,
