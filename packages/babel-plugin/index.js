@@ -106,8 +106,6 @@ export default function babelPlugin(babel) {
             return;
           }
 
-          console.log("FunctionDeclaration", name);
-
           analyzeBody(path, name, path);
         },
       },
@@ -132,8 +130,6 @@ export default function babelPlugin(babel) {
         //     console.log("ExportDefaultDeclaration");
         //     break;
         // }
-
-        console.log("VariableDeclaration", name);
 
         const declarations = path.get("declarations")[0];
         const init = declarations.get("init");

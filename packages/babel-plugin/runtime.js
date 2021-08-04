@@ -2,8 +2,6 @@ let pendingUpdates = [];
 let isPerformingRefresh = false;
 
 function injectIntoGlobalHook() {
-  console.log("injectIntoGlobalHook()");
-
   if (!window.__UPDATE__ || !window.__COMPONENT_TO_NODE__) {
     throw new Error("Cannot use fast refresh. Missing global hooks.");
   }
@@ -11,8 +9,6 @@ function injectIntoGlobalHook() {
 
 // Also known as $RefreshReg$.
 function register(render, id, name, hooks) {
-  console.log("register()");
-
   if (render === null) {
     return;
   }
@@ -23,8 +19,6 @@ function register(render, id, name, hooks) {
 }
 
 function performRefresh() {
-  console.log("performRefresh()");
-
   if (pendingUpdates.length === 0) {
     return;
   }

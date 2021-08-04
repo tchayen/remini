@@ -69,8 +69,6 @@ function isRefreshBoundary(ast) {
 function refreshPlugin() {
   let shouldSkip = false;
 
-  console.log("Plugin loaded.");
-
   return {
     name: "refresh",
     enforce: "pre",
@@ -168,7 +166,6 @@ function refreshPlugin() {
 
           if (${isRefreshBoundary(result.ast)}) {
             import.meta.hot.accept();
-            console.log('HOT ${id}');
           }
 
           if (!window.__REFRESH_TIMEOUT__) {
