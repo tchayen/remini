@@ -33,7 +33,6 @@ let _hookIndex = 0;
 let _currentHost: HostType<any, any> | null = null;
 const contextValues: Map<Context<any>, any> = new Map();
 
-// TODO: if (__DEV__) {
 const componentToNode = new Map<RenderFunction, RNode[]>();
 
 type Job = {
@@ -691,6 +690,8 @@ export const render = (element: RElement, container: HTMLElement): void => {
     parent: null,
     descendants: [],
   };
+
+  componentToNode.clear();
 
   runUpdateLoop(_rootNode, createElement("div", {}, element), {
     host: domHost,

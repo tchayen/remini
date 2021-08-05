@@ -2,11 +2,12 @@
   "name": "babel-plugin",
   "version": "0.0.0",
   "scripts": {
-    "test": "jest --watch"
+    "test": "jest --watch --env=jsdom"
   },
   "devDependencies": {
     "@babel/core": "^7.14.8",
     "@babel/preset-env": "^7.14.8",
+    "@babel/preset-typescript": "^7.15.0",
     "jest": "^27.0.6"
   }
 }
