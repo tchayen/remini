@@ -15,18 +15,18 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      
+
       - name: Download dependencies
         run: yarn
 
       - name: Run tests on main lib
         run: |
           cd packages/remini
-          yarn test
+          yarn run jest --env=jsdom
           cd ../..
 
       - name: Run tests on Babel plugin
         run: |
           cd packages/babel-plugin
-          yarn test
+          yarn run jest --env=jsdom
           cd ../..
