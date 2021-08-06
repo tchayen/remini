@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Download dependencies
+        run: yarn
+
+      - name: Run tests on main lib
+        run: |
+          cd packages/remini
+          yarn test
+          cd ../..
+
+      - name: Run tests on Babel plugin
+        run: |
+          cd packages/babel-plugin
+          yarn test
+          cd ../..
