@@ -76,9 +76,9 @@ export const updateDom = (current: HostNode, expected: HostElement): void => {
       if (!current.props[key]) {
         if (key === "style") {
           const style =
-            typeof current.props[key] === "string"
-              ? current.props[key]
-              : styleObjectToString(current.props[key]);
+            typeof expected.props[key] === "string"
+              ? expected.props[key]
+              : styleObjectToString(expected.props[key]);
           html.setAttribute(key, style);
         } else {
           html.setAttribute(keyToAttribute(key), expected.props[key] as string);
