@@ -1,3 +1,4 @@
+// eslint-disable-next-line
 const babelJestMetaPlaceholderPreset = require("./babelJestMetaPlaceholderPreset");
 
 module.exports = {
