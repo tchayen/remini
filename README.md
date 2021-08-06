@@ -23,18 +23,36 @@ render(c(Counter), document.getElementById("root"));
 
 ## How to play with it?
 
-`yarn start` to start the dev server at `localhost:1234`.
+`/examples` contains examples of small web apps wrote with the library.
 
-`yarn test` to see the tests passing.
+`/packages/remini` is the main library. It contains test that can be run with `yarn test`.
+
+## Packages
+
+- `babel-plugin` – contains Babel plugin for transforming files to support fast refresh and the runtime that is used for refreshing components.
+
+- `remini` – main library.
+
+- `vite-plugin` – plugin for Vite to support fast refresh.
 
 ## Might come later
+
 - [x] Accepting `style` object as alternative to string prop
 - [x] Updater version of `setState`
 - [x] `ref`s
 - [x] Context API
 - [x] `<Fragment />`
 - [x] SSR
-- [ ] Fast refresh
+- [x] Fast refresh
+
+## Missing from React
+
+- Non-blocking rendering
+- Ref forwarding
+- Code splitting
+- Portals
+- Suspense
+- Server components
 
 ## Useful reading
 
