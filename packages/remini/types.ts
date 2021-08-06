@@ -1,3 +1,10 @@
+declare global {
+  interface Window {
+    __UPDATE__: (node: RNode) => void;
+    __COMPONENT_TO_NODE__: Map<string, RNode[]>;
+  }
+}
+
 export type HostType<T, R> = {
   findClosestComponent: (node: RNode) => ComponentNode | null;
   findClosestHostNode: (node: RNode) => HostNode;
@@ -27,7 +34,9 @@ export type Props = {
   style?: Record<string, unknown> | string;
 };
 
-export type RenderFunction = (props: any) => RElement;
+export type RenderFunction = ((props: any) => RElement | null) & {
+  $id$?: string;
+};
 
 export type ComponentType = RenderFunction | string;
 

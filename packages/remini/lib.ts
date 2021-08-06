@@ -12,7 +12,6 @@ import {
   Props,
   ProviderProps,
   RElement,
-  RenderFunction,
   RNode,
 } from "./types";
 
@@ -33,7 +32,7 @@ let _hookIndex = 0;
 let _currentHost: HostType<any, any> | null = null;
 const contextValues: Map<Context<any>, any> = new Map();
 
-const componentToNode = new Map<RenderFunction, RNode[]>();
+const componentToNode = new Map<string, RNode[]>();
 
 type Job = {
   node: RNode;
@@ -142,7 +141,7 @@ const update = (
     _hookIndex = 0;
     // This will be always one element array because this implementation doesn't
     // support returning arrays from render functions.
-    elements = [node.render(node.props)];
+    elements = [node.render(node.props)].filter(Boolean) as RElement[];
     _hookIndex = 0;
   } else if (
     element &&
@@ -298,7 +297,7 @@ const update = (
         });
 
         // Remove node from mapping.
-        if (true) {
+        if (import.meta.env.DEV && current.render.$id$) {
           componentToNode.set(
             current.render.$id$,
             (componentToNode.get(current.render.$id$) || []).filter((node) => {
@@ -322,7 +321,7 @@ const update = (
         };
 
         if (expected.kind === NodeType.COMPONENT) {
-          if (true) {
+          if (import.meta.env.DEV && expected.render.$id$) {
             componentToNode.set(
               expected.render.$id$,
               (componentToNode.get(expected.render.$id$) || []).concat(newNode)
@@ -408,7 +407,7 @@ const update = (
         });
 
         // Remove node from mapping.
-        if (true) {
+        if (import.meta.env.DEV && current.render.$id$) {
           componentToNode.set(
             current.render.$id$,
             (componentToNode.get(current.render.$id$) || []).filter((node) => {
@@ -777,7 +776,7 @@ const getNextNode = () => {
   }
 };
 
-if (true && typeof window !== "undefined") {
+if (import.meta.env.DEV && typeof window !== "undefined") {
   window.__UPDATE__ = (node: RNode) =>
     runUpdateLoop(node, null, { host: domHost });
   window.__COMPONENT_TO_NODE__ = componentToNode;

@@ -2,10 +2,8 @@
   "name": "example",
   "version": "0.0.0",
   "scripts": {
-    "dev": "vite",
+    "dev": "node src/server",
     "build": "vite build",
-    "serve": "vite preview",
-    "ssr": "node src/server",
     "build-styles": "NODE_ENV=production yarn run postcss style.css -o build.css"
   },
   "devDependencies": {
