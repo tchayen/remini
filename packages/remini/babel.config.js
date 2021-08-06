@@ -1,9 +1,9 @@
 // eslint-disable-next-line
-const babelJestMetaPlaceholderPreset = require("./babelJestMetaPlaceholderPreset");
+const importMetaPreset = require("../import-meta-preset");
 
 module.exports = {
   presets: [
-    babelJestMetaPlaceholderPreset,
+    importMetaPreset,
     ["@babel/preset-env", { targets: { node: "current" } }],
     "@babel/preset-typescript",
   ],
