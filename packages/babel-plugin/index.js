@@ -133,6 +133,14 @@ export default function babelPlugin(babel) {
 
         const declarations = path.get("declarations")[0];
         const init = declarations.get("init");
+
+        if (
+          init.type !== "ArrowFunctionExpression" &&
+          init.type !== "FunctionExpression"
+        ) {
+          return;
+        }
+
         analyzeBody(init, name, path);
       },
       Program: {
