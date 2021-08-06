@@ -755,7 +755,8 @@ export const hydrate = (element: RElement, container: HTMLElement): void => {
   _node = null;
 };
 
-// TODO: move somewhere outside.
+// TODO
+// Move somewhere outside.
 let _node: Node | null = null;
 const getNextNode = () => {
   if (_node === null) {

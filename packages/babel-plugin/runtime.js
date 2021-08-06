@@ -1,3 +1,8 @@
+// TODO
+// Make sure all steps from https://overreacted.io/my-wishlist-for-hot-reloading/#correctness
+// and later paragraphs are covered.
+// (for example error recovery is not done for sure).
+
 let pendingUpdates = [];
 let isPerformingRefresh = false;
 
