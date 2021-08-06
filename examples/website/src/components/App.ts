@@ -1,4 +1,8 @@
-import { createElement as c, useEffect, useState } from "../../../../lib";
+import {
+  createElement as c,
+  useEffect,
+  useState,
+} from "../../../../packages/remini/lib";
 import { getFriendlyTime } from "../utils/date";
 import Author from "./Author";
 import Avatar from "./Avatar";

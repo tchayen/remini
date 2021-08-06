@@ -1,4 +1,4 @@
-import { createElement as c, RElement } from "../../../../lib";
+import { createElement as c, RElement } from "../../../../packages/remini/lib";
 import { users } from "../data";
 
 const Avatar = ({ author }: { author: number }): RElement => {

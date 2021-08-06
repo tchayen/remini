@@ -1,4 +1,4 @@
-import { createElement as c, RElement } from "../../../../lib";
+import { createElement as c, RElement } from "../../../../packages/remini/lib";
 
 const Spinner = (): RElement => {
   return c(

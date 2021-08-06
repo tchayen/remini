@@ -47,7 +47,7 @@ render(c(Counter), document.getElementById("root"));
 - [In-depth explanation of state and props update in React](https://indepth.dev/posts/1009/in-depth-explanation-of-state-and-props-update-in-react)
 - [Build your own React](https://pomb.us/build-your-own-react/)
 - [XSS via a spoofed React element](http://danlec.com/blog/xss-via-a-spoofed-react-element)
-
+- [What are the downsides of preact?](https://github.com/preactjs/preact/issues/2199)
 ### HMR
 
 - [Dan Abramov's comment describing how to implement HMR](https://github.com/facebook/react/issues/16604#issuecomment-528663101)
@@ -55,6 +55,7 @@ render(c(Counter), document.getElementById("root"));
 - [React Native docs about Fast Refresh](https://reactnative.dev/docs/fast-refresh)
 - [handleHotUpdate in Vite](https://vitejs.dev/guide/api-plugin.html#handlehotupdate)
 - [HMR API docs in Vite](https://vitejs.dev/guide/api-hmr.html)
+- [Babel Plugin Handbook](https://github.com/jamiebuilds/babel-handbook/blob/master/translations/en/plugin-handbook.md)
 
 #### Actual implementations
 
@@ -62,10 +63,11 @@ render(c(Counter), document.getElementById("root"));
 - [React Refresh package](https://github.com/facebook/react/blob/main/packages/react-refresh)
 - [Vite plugin-react-refresh](https://github.com/vitejs/vite/blob/main/packages/plugin-react-refresh)
 - [Description how tagging with signatures work](https://github.com/facebook/react/issues/20417#issuecomment-807823533)
--
+
 ### Later
 
 - Read more about [Reconcilliation](https://reactjs.org/docs/reconciliation.html)
 - Implement support for [Code-splitting](https://reactjs.org/docs/code-splitting.html)
 - [Forwarding refs](https://reactjs.org/docs/forwarding-refs.html)
 - [Portals](https://reactjs.org/docs/jsx-in-depth.html)
+- [Server components](https://github.com/josephsavona/rfcs/blob/server-components/text/0000-server-components.md)

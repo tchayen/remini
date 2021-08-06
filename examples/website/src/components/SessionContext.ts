@@ -1,4 +1,4 @@
-import { createContext } from "../../../../lib";
+import { createContext } from "../../../../packages/remini/lib";
 
 type Session = {
   token: string | null;

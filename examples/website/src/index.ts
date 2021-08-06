@@ -1,5 +1,5 @@
 import "../style.css";
-import { createElement as c, hydrate } from "../../../lib";
+import { createElement as c, hydrate } from "../../../packages/remini/lib";
 import App from "./components/App";
 
 const root = document.getElementById("root");

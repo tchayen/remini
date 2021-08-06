@@ -3,7 +3,7 @@ import {
   RElement,
   useEffect,
   useRef,
-} from "../../../../lib";
+} from "../../../../packages/remini/lib";
 
 const AutoScale = (props: any): RElement => {
   const ref = useRef<HTMLTextAreaElement>();

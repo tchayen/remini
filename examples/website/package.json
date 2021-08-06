@@ -9,6 +9,7 @@
     "build-styles": "NODE_ENV=production yarn run postcss style.css -o build.css"
   },
   "devDependencies": {
+    "@babel/core": "^7.14.8",
     "autoprefixer": "^10.3.1",
     "cssnano": "^5.0.7",
     "express": "^4.17.1",

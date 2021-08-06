@@ -1,5 +1,5 @@
-import { Host as DomHost } from "./dom";
-import { SSRNode, Host as SSRHost } from "./ssr";
+import { host as domHost } from "./dom";
+import { SSRNode, host as ssrHost } from "./ssr";
 import {
   Children,
   ComponentType,
@@ -12,6 +12,7 @@ import {
   Props,
   ProviderProps,
   RElement,
+  RenderFunction,
   RNode,
 } from "./types";
 
@@ -32,13 +33,15 @@ let _hookIndex = 0;
 let _currentHost: HostType<any, any> | null = null;
 const contextValues: Map<Context<any>, any> = new Map();
 
+const componentToNode = new Map<RenderFunction, RNode[]>();
+
 type Job = {
   node: RNode;
   element: RElement | null;
 };
 
 type UpdateConfig = {
-  Host: HostType<any, any>;
+  host: HostType<any, any>;
   isHydrating?: boolean;
 };
 
@@ -112,13 +115,14 @@ export function createElement(
   throw new Error("Something went wrong.");
 }
 
+// Null element argument is meant for updating components.
 const update = (
   node: RNode,
   element: RElement | null,
   config: UpdateConfig
 ) => {
-  const { Host } = config;
-  _currentHost = Host;
+  const { host, isHydrating } = config;
+  _currentHost = host;
 
   const previousNode = _currentNode;
   const previousIndex = _hookIndex;
@@ -151,7 +155,10 @@ const update = (
       const currentValue = contextValues.get(node.context);
 
       if (currentValue) {
-        replacedContext = { context: node.context, value: currentValue };
+        replacedContext = {
+          context: node.context,
+          value: currentValue,
+        };
       }
 
       contextValues.set(node.context, { value: node.props.value });
@@ -161,12 +168,12 @@ const update = (
   }
 
   if (
-    config.isHydrating &&
+    isHydrating &&
     node.kind === NodeType.HOST &&
     element &&
     element.kind === NodeType.HOST
   ) {
-    Host.updateHostNode(node, element);
+    host.updateHostNode(node, element);
   }
 
   // Reconcile.
@@ -194,14 +201,15 @@ const update = (
     ) {
       // UPDATE
       if (current.kind === NodeType.HOST && expected.kind === NodeType.HOST) {
-        Host.updateHostNode(current, expected);
+        host.updateHostNode(current, expected);
       } else if (
         // Text value changed.
         current.kind === NodeType.TEXT &&
         expected.kind === NodeType.TEXT &&
         current.content !== expected.content
       ) {
-        Host.updateTextNode(current, expected.content);
+        current.content = expected.content;
+        host.updateTextNode(current, expected.content);
       }
 
       // Props can be updated.
@@ -221,9 +229,9 @@ const update = (
           hooks: [],
         };
 
-        Host.removeHostNode(current);
+        host.removeHostNode(current);
       } else if (expected.kind === NodeType.HOST) {
-        const firstParentWithHostNode = Host.findClosestHostNode(node);
+        const firstParentWithHostNode = host.findClosestHostNode(node);
 
         const nodeConstruction: any = {
           ...expected,
@@ -231,32 +239,32 @@ const update = (
           descendants: [],
         };
 
-        const native = Host.createHostNode(expected);
+        const native = host.createHostNode(expected);
         if (current.kind === NodeType.HOST || current.kind === NodeType.TEXT) {
           firstParentWithHostNode.native.replaceChild(native, current.native);
         } else {
-          Host.removeHostNode(current);
-          Host.appendChild(firstParentWithHostNode.native, native);
+          host.removeHostNode(current);
+          host.appendChild(firstParentWithHostNode.native, native);
         }
         nodeConstruction.native = native;
 
         newNode = nodeConstruction;
       } else if (expected.kind === NodeType.TEXT) {
-        const firstParentWithHostNode = Host.findClosestHostNode(node);
+        const firstParentWithHostNode = host.findClosestHostNode(node);
         const nodeConstruction: any = {
           ...expected,
           parent: node,
         };
 
-        const native = Host.createTextNode(expected.content);
+        const native = host.createTextNode(expected.content);
         if (current.kind === NodeType.TEXT) {
           throw new Error("Update should have happened on this node.");
         } else if (current.kind === NodeType.HOST) {
           firstParentWithHostNode.native.replaceChild(native, current.native);
           nodeConstruction.native = native;
         } else {
-          Host.removeHostNode(current);
-          Host.appendChild(firstParentWithHostNode.native, native);
+          host.removeHostNode(current);
+          host.appendChild(firstParentWithHostNode.native, native);
           nodeConstruction.native = native;
         }
 
@@ -269,7 +277,7 @@ const update = (
           descendants: [],
         };
 
-        Host.removeHostNode(current);
+        host.removeHostNode(current);
       } else if (expected.kind === NodeType.FRAGMENT) {
         newNode = {
           ...expected,
@@ -277,7 +285,7 @@ const update = (
           descendants: [],
         };
 
-        Host.removeHostNode(current);
+        host.removeHostNode(current);
       } else {
         throw new Error("Couldn't resolve node kind.");
       }
@@ -288,6 +296,16 @@ const update = (
             hook.cleanup();
           }
         });
+
+        // Remove node from mapping.
+        if (true) {
+          componentToNode.set(
+            current.render.$id$,
+            (componentToNode.get(current.render.$id$) || []).filter((node) => {
+              return node !== current;
+            })
+          );
+        }
       }
 
       node.descendants[node.descendants.indexOf(current)] = newNode;
@@ -302,20 +320,29 @@ const update = (
           descendants: [],
           hooks: [],
         };
+
+        if (expected.kind === NodeType.COMPONENT) {
+          if (true) {
+            componentToNode.set(
+              expected.render.$id$,
+              (componentToNode.get(expected.render.$id$) || []).concat(newNode)
+            );
+          }
+        }
       } else if (expected.kind === NodeType.HOST) {
         const nodeConstruction: any = {
           ...expected,
           parent: node,
           descendants: [],
         };
-        const firstParentWithHostNode = Host.findClosestHostNode(node);
+        const firstParentWithHostNode = host.findClosestHostNode(node);
 
-        if (config.isHydrating) {
+        if (isHydrating) {
           nodeConstruction.native = _node;
           getNextNode();
         } else {
-          nodeConstruction.native = Host.createHostNode(expected);
-          Host.appendChild(
+          nodeConstruction.native = host.createHostNode(expected);
+          host.appendChild(
             firstParentWithHostNode.native,
             nodeConstruction.native
           );
@@ -324,7 +351,7 @@ const update = (
         newNode = nodeConstruction;
 
         // Handle useRef.
-        const closestComponent = Host.findClosestComponent(node);
+        const closestComponent = host.findClosestComponent(node);
         if (closestComponent && closestComponent.kind === NodeType.COMPONENT) {
           for (const hook of closestComponent.hooks) {
             if (hook.type === HookType.REF && expected.props.ref === hook) {
@@ -338,14 +365,14 @@ const update = (
           parent: node,
         };
 
-        const firstParentWithNative = Host.findClosestHostNode(node);
+        const firstParentWithNative = host.findClosestHostNode(node);
 
-        if (config.isHydrating) {
+        if (isHydrating) {
           nodeConstruction.native = _node;
           getNextNode();
         } else {
-          const hostNode = Host.createTextNode(expected.content);
-          Host.appendChild(firstParentWithNative.native, hostNode);
+          const hostNode = host.createTextNode(expected.content);
+          host.appendChild(firstParentWithNative.native, hostNode);
           nodeConstruction.native = hostNode;
         }
 
@@ -379,11 +406,21 @@ const update = (
             hook.cleanup();
           }
         });
+
+        // Remove node from mapping.
+        if (true) {
+          componentToNode.set(
+            current.render.$id$,
+            (componentToNode.get(current.render.$id$) || []).filter((node) => {
+              return node !== current;
+            })
+          );
+        }
       } else if (current.kind === NodeType.PROVIDER) {
         contextValues.delete(current.context);
       }
 
-      Host.removeHostNode(current);
+      host.removeHostNode(current);
       node.descendants.splice(indexOfCurrent, 1);
     }
   });
@@ -497,18 +534,21 @@ export const useState = <T>(
   // Capture the current node.
   const c = _currentNode;
   const i = _hookIndex;
-  const H = _currentHost;
+  const h = _currentHost;
 
   if (!c || c.kind !== NodeType.COMPONENT) {
     throw new Error("Executing useState for non-function element.");
   }
 
-  if (!H) {
+  if (!h) {
     throw new Error("Missing host context.");
   }
 
   if (c.hooks[i] === undefined) {
-    c.hooks[i] = { type: HookType.STATE, state: initial };
+    c.hooks[i] = {
+      type: HookType.STATE,
+      state: initial,
+    };
   }
 
   const hook = c.hooks[i];
@@ -530,7 +570,7 @@ export const useState = <T>(
       hook.state = next;
     }
 
-    runUpdateLoop(c, null, { Host: H });
+    runUpdateLoop(c, null, { host: h });
   };
 
   _hookIndex += 1;
@@ -545,7 +585,10 @@ export const useRef = <T>(): { current: T | null } => {
 
   let ref = _currentNode.hooks[_hookIndex];
   if (ref === undefined) {
-    ref = { type: HookType.REF, current: null };
+    ref = {
+      type: HookType.REF,
+      current: null,
+    };
     _currentNode.hooks[_hookIndex] = ref;
   }
 
@@ -604,14 +647,13 @@ export const useMemo = <T>(callback: () => T, dependencies: any[]): T => {
 export const createContext = <T>(): Context<T> => {
   const context: any = {};
 
-  const Provider = <T>({ value }: ProviderProps<T>): RElement => {
+  const providerRender = <T>({ value }: ProviderProps<T>): RElement => {
     // Doesn't matter what is being returned here.
     return createElement("a", {});
   };
 
-  Provider.context = context;
-
-  context.Provider = Provider;
+  providerRender.context = context;
+  context.Provider = providerRender;
   return context;
 };
 
@@ -649,8 +691,10 @@ export const render = (element: RElement, container: HTMLElement): void => {
     descendants: [],
   };
 
+  componentToNode.clear();
+
   runUpdateLoop(_rootNode, createElement("div", {}, element), {
-    Host: DomHost,
+    host: domHost,
   });
 };
 
@@ -684,7 +728,7 @@ export const renderToString = (element: RElement): string => {
   };
 
   runUpdateLoop(_rootNode, createElement("div", {}, element), {
-    Host: SSRHost,
+    host: ssrHost,
   });
 
   return printSSRTree(_rootNode.native);
@@ -705,7 +749,7 @@ export const hydrate = (element: RElement, container: HTMLElement): void => {
   _node = container.firstChild as Node;
 
   runUpdateLoop(_rootNode, createElement("div", {}, element), {
-    Host: DomHost,
+    host: domHost,
     isHydrating: true,
   });
   _node = null;
@@ -731,3 +775,8 @@ const getNextNode = () => {
     _node = _node.nextSibling;
   }
 };
+
+if (true && typeof window !== "undefined") {
+  window.__UPDATE__ = (node: RNode) => update(node, null, { host: domHost });
+  window.__COMPONENT_TO_NODE__ = componentToNode;
+}

@@ -24,6 +24,9 @@ export const removeHostNode = (node: RNode): void => {
   }
 };
 
+// TODO
+// Remove code that is repeated in DOM.
+
 export const createHostNode = (element: HostElement): SSRNode => {
   const html: SSRNode = {
     tag: element.tag,
@@ -112,7 +115,7 @@ export const updateTextNode = (node: TextNode, text: string): void => {
   node.native = text;
 };
 
-export const Host = {
+export const host = {
   findClosestComponent,
   createHostNode,
   findClosestHostNode,

@@ -1,4 +1,8 @@
-import { createElement as c, RElement, useState } from "../../../../lib";
+import {
+  createElement as c,
+  RElement,
+  useState,
+} from "../../../../packages/remini/lib";
 import Avatar from "./Avatar";
 import { TEXT_PRIMARY, TEXT_SECONDARY } from "../constants";
 import { users } from "../data";
