@@ -778,6 +778,7 @@ const getNextNode = () => {
 };
 
 if (true && typeof window !== "undefined") {
-  window.__UPDATE__ = (node: RNode) => update(node, null, { host: domHost });
+  window.__UPDATE__ = (node: RNode) =>
+    runUpdateLoop(node, null, { host: domHost });
   window.__COMPONENT_TO_NODE__ = componentToNode;
 }

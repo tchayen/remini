@@ -89,7 +89,7 @@ describe("Fast refresh runtime", () => {
     );
   });
 
-  it("cleans up and re-runs hooks properly", () => {
+  it("cleans up and re-runs useEffects properly", () => {
     // TODO
     // Finish it and implement missing parts.
 
@@ -97,9 +97,6 @@ describe("Fast refresh runtime", () => {
     const runOnCleanUp = jest.fn();
 
     const App = () => {
-      const ref = useRef();
-      const memo = useMemo(() => 2 * 2, []);
-
       useEffect(() => {
         runOnEffect();
         return () => {
@@ -107,19 +104,36 @@ describe("Fast refresh runtime", () => {
         };
       }, []);
 
-      return c("div", {}, c("span", { ref }, "test"), c("span", {}, `${memo}`));
+      return c("div", {}, "abc");
     };
-
-    RefreshRuntime.register(
-      App,
-      "/User/test/Desktop/App.js",
-      "App",
-      // TODO
-      // I think both ref and memo are not supported yet.
-      "ref = useRef();memo = useMemo(() => 2 * 2, [])"
-    );
+    RefreshRuntime.register(App, "/User/test/Desktop/App.js", "App");
 
     render(c(App), document.body);
+    RefreshRuntime.performRefresh();
+
+    expect(document.body.innerHTML).toBe("<div>abc</div>");
+    expect(runOnEffect).toHaveBeenCalledTimes(2);
+
+    const UpdatedApp = () => {
+      useEffect(() => {
+        runOnEffect();
+        return () => {
+          runOnCleanUp();
+        };
+      }, []);
+
+      return c("div", {}, "abcde");
+    };
+    RefreshRuntime.register(UpdatedApp, "/User/test/Desktop/App.js", "App");
+    RefreshRuntime.performRefresh();
+
+    expect(document.body.innerHTML).toBe("<div>abcde</div>");
+    expect(runOnEffect).toHaveBeenCalledTimes(3);
+    expect(runOnCleanUp).toHaveBeenCalledTimes(2);
+  });
+
+  it("handles memo and ref hooks", () => {
+    //
   });
 
   it("doesn't destroy state of siblings or parent", () => {
