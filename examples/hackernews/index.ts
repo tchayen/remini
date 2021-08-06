@@ -1,10 +1,11 @@
+import "./style.css";
 import {
   createElement as c,
   RElement,
   render,
   useEffect,
   useState,
-} from "../../lib";
+} from "../../packages/remini/lib";
 
 const root = document.getElementById("root");
 
@@ -88,7 +89,7 @@ const Author = ({ username }: { username: string }) => {
           "div",
           {
             class: "bg-white p-2 shadow-xl rounded",
-            style: { position: "absolute" },
+            style: { position: "absolute", top: "20px" },
           },
           c(Modal, { username })
         )
