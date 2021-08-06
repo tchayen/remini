@@ -44,6 +44,7 @@ render(c(Counter), document.getElementById("root"));
 - [x] `<Fragment />`
 - [x] SSR
 - [x] Fast refresh
+- [ ] key prop
 
 ## Missing from React
 
