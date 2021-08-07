@@ -16,7 +16,7 @@ export type HostType<T, R> = {
   updateTextNode: (current: TextNode, text: string) => void;
 };
 
-export type Child = RElement[] | string | number | false | null;
+export type Child = RElement | string | number | false | null;
 export type Children = RElement[] | string | number | false | null;
 
 export type ProviderProps<T> = { value: T };
