@@ -1,5 +1,6 @@
+import remini from "../../packages/remini-plugin";
 import refresh from "../../packages/vite-plugin";
 
-module.exports = {
-  plugins: [refresh()],
+export default {
+  plugins: [remini(), refresh()],
 };

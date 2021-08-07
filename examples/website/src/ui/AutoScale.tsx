@@ -21,16 +21,18 @@ const AutoScale = (props: any): RElement => {
     resize();
   }, []);
 
-  return c("textarea", {
-    ref,
-    style: {
-      resize: "none",
-      overflowY: "hidden",
-    },
-    row: 1,
-    onInput: resize,
-    ...props,
-  });
+  return (
+    <textarea
+      ref={ref}
+      style={{
+        resize: "none",
+        overflowY: "hidden",
+      }}
+      row={1}
+      onInput={resize}
+      {...props}
+    />
+  );
 };
 
 export default AutoScale;

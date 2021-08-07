@@ -111,7 +111,7 @@ function refreshPlugin() {
       }
 
       // Potentially might require adding JSX or decorators support in future.
-      const parserPlugins = [/\.tsx?$/.test(id) && "typescript"];
+      const parserPlugins = ["jsx", /\.tsx?$/.test(id) && "typescript"];
 
       const result = transformSync(code, {
         babelrc: false,

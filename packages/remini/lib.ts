@@ -1,6 +1,7 @@
 import { host as domHost } from "./dom";
 import { SSRNode, host as ssrHost } from "./ssr";
 import {
+  Child,
   Children,
   ComponentType,
   Context,
@@ -57,7 +58,7 @@ export function createElement(
 export function createElement(
   component: ComponentType,
   props?: Props,
-  ...children: (RElement | string | null)[]
+  ...children: Child[]
 ): RElement;
 
 export function createElement(
@@ -69,13 +70,19 @@ export function createElement(
     ...(props || {}),
     children: children
       .flat()
-      .map((child: RElement | string | null) => {
+      .map((child: Child) => {
         if (typeof child === "string") {
           return {
             kind: NodeType.TEXT,
             content: child,
           };
+        } else if (typeof child === "number") {
+          return {
+            kind: NodeType.TEXT,
+            content: child.toString(),
+          };
         } else {
+          // Null and false will be passed here and filtered below.
           return child;
         }
       })
@@ -647,7 +654,8 @@ export const createContext = <T>(): Context<T> => {
   const context: any = {};
 
   const providerRender = <T>({ value }: ProviderProps<T>): RElement => {
-    // Doesn't matter what is being returned here.
+    // Doesn't matter at all what is being returned here as long as it is of
+    // RElement type.
     return createElement("a", {});
   };
 

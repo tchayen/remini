@@ -5,6 +5,9 @@
     "removeComments": true,
     "preserveConstEnums": true,
     "sourceMap": true,
-    "strictNullChecks": true
+    "strictNullChecks": true,
+    "jsx": "react",
+    "jsxFactory": "c",
+    "jsxFragmentFactory": "Fragment"
   }
 }
