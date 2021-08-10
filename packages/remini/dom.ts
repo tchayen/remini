@@ -9,7 +9,14 @@ import {
 } from "./utils";
 
 function createElement(type: string): Element {
-  if (type === "svg" || type === "circle" || type === "path") {
+  if (
+    type === "svg" ||
+    type === "circle" ||
+    type === "path" ||
+    type === "rect" ||
+    type === "foreignObject" ||
+    type === "g"
+  ) {
     return document.createElementNS("http://www.w3.org/2000/svg", type);
   } else {
     return document.createElement(type);

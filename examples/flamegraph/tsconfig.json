@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "module": "ES2020",
+    "noImplicitAny": true,
+    "removeComments": true,
+    "preserveConstEnums": true,
+    "sourceMap": true,
+    "strictNullChecks": true,
+    "jsx": "react",
+    "jsxFactory": "c",
+    "jsxFragmentFactory": "Fragment"
+  }
+}

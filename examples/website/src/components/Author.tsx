@@ -7,12 +7,6 @@ import Avatar from "./Avatar";
 import { TEXT_PRIMARY, TEXT_SECONDARY } from "../constants";
 import { users } from "../data";
 
-declare namespace JSX {
-  interface IntrinsicElements {
-    [elemName: string]: any;
-  }
-}
-
 const Author = ({ author }: { author: number }): RElement => {
   const [show, setShow] = useState(false);
 
