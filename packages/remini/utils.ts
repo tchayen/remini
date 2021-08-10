@@ -17,9 +17,9 @@ export const keyToAttribute = (key: string): string => {
 const camelCaseToKebab = (str: string) =>
   str.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
 
-export const styleObjectToString = (style: {
+export function styleObjectToString(style: {
   [key: string]: string | number;
-}): string => {
+}): string {
   const string = Object.keys(style)
     .map((key) => {
       const value = style[key];
@@ -27,9 +27,9 @@ export const styleObjectToString = (style: {
     })
     .join(";");
   return string;
-};
+}
 
-export const findClosestComponent = (node: RNode): ComponentNode | null => {
+export function findClosestComponent(node: RNode): ComponentNode | null {
   let current = node;
 
   while (current.kind !== NodeType.COMPONENT && current.parent) {
@@ -41,9 +41,9 @@ export const findClosestComponent = (node: RNode): ComponentNode | null => {
   }
 
   return current;
-};
+}
 
-export const findClosestHostNode = (node: RNode): HostNode => {
+export function findClosestHostNode(node: RNode): HostNode {
   let current = node;
 
   while (current.kind !== NodeType.HOST && current.parent) {
@@ -57,4 +57,4 @@ export const findClosestHostNode = (node: RNode): HostNode => {
   }
 
   return current;
-};
+}

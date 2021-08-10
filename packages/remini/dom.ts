@@ -8,15 +8,15 @@ import {
   findClosestHostNode,
 } from "./utils";
 
-const createElement = (type: string): Element => {
+function createElement(type: string): Element {
   if (type === "svg" || type === "circle" || type === "path") {
     return document.createElementNS("http://www.w3.org/2000/svg", type);
   } else {
     return document.createElement(type);
   }
-};
+}
 
-export const createDom = (element: HostElement): Element => {
+export function createDom(element: HostElement): Element {
   const html = createElement(element.tag);
 
   Object.entries(element.props).forEach(([key, value]) => {
@@ -34,10 +34,10 @@ export const createDom = (element: HostElement): Element => {
   });
 
   return html;
-};
+}
 
 // Update two DOM nodes of the same HTML tag.
-export const updateDom = (current: HostNode, expected: HostElement): void => {
+export function updateDom(current: HostNode, expected: HostElement): void {
   const html = current.native as HTMLElement;
 
   Object.keys(current.props).forEach((key) => {
@@ -86,9 +86,9 @@ export const updateDom = (current: HostNode, expected: HostElement): void => {
       }
     }
   });
-};
+}
 
-export const removeDom = (node: RNode): void => {
+export function removeDom(node: RNode): void {
   if (node.kind === NodeType.HOST || node.kind === NodeType.TEXT) {
     node.native.parentNode?.removeChild(node.native);
   } else {
@@ -96,18 +96,19 @@ export const removeDom = (node: RNode): void => {
       removeDom(child);
     });
   }
-};
+}
 
-export const appendChild = (parent: Node, child: Node): void => {
+export function appendChild(parent: Node, child: Node): void {
   parent.appendChild(child);
-};
+}
 
-export const createTextNode = (text: string): Text =>
-  document.createTextNode(text);
+export function createTextNode(text: string): Text {
+  return document.createTextNode(text);
+}
 
-export const updateTextNode = (current: TextNode, text: string): void => {
+export function updateTextNode(current: TextNode, text: string): void {
   current.native.nodeValue = text;
-};
+}
 
 export const host = {
   findClosestComponent,

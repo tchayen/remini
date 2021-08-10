@@ -13,7 +13,7 @@ export type SSRNode = {
   children: (SSRNode | string)[];
 };
 
-export const removeHostNode = (node: RNode): void => {
+export function removeHostNode(node: RNode): void {
   if (node.kind === NodeType.HOST || node.kind === NodeType.TEXT) {
     const { children } = node.native.parent;
     children.splice(children.indexOf(node.native), 1);
@@ -22,12 +22,12 @@ export const removeHostNode = (node: RNode): void => {
       removeHostNode(child);
     });
   }
-};
+}
 
 // TODO
 // Remove code that is repeated in DOM.
 
-export const createHostNode = (element: HostElement): SSRNode => {
+export function createHostNode(element: HostElement): SSRNode {
   const html: SSRNode = {
     tag: element.tag,
     children: [],
@@ -49,12 +49,9 @@ export const createHostNode = (element: HostElement): SSRNode => {
   });
 
   return html;
-};
+}
 
-export const updateHostNode = (
-  current: HostNode,
-  expected: HostElement
-): void => {
+export function updateHostNode(current: HostNode, expected: HostElement): void {
   const html = current.native as SSRNode;
 
   Object.keys(current.props).forEach((key) => {
@@ -103,17 +100,19 @@ export const updateHostNode = (
       }
     }
   });
-};
+}
 
-export const appendChild = (parent: SSRNode, child: SSRNode): void => {
+export function appendChild(parent: SSRNode, child: SSRNode): void {
   parent.children.push(child);
-};
+}
 
-export const createTextNode = (text: string): string => text;
+export function createTextNode(text: string): string {
+  return text;
+}
 
-export const updateTextNode = (node: TextNode, text: string): void => {
+export function updateTextNode(node: TextNode, text: string): void {
   node.native = text;
-};
+}
 
 export const host = {
   findClosestComponent,
