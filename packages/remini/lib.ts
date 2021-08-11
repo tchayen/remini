@@ -31,9 +31,9 @@ export let _rootNode: HostNode | null = null;
 let _currentNode: RNode | null = null;
 let _hookIndex = 0;
 let _currentHost: HostType<any, any> | null = null;
-const contextValues: Map<Context<any>, any> = new Map();
+const _contextValues: Map<Context<any>, any> = new Map();
 
-const componentToNode = new Map<string, RNode[]>();
+const _componentToNode = new Map<string, RNode[]>();
 
 type Job = {
   node: RNode;
@@ -45,9 +45,9 @@ type UpdateConfig = {
   isHydrating?: boolean;
 };
 
-let updating = false;
-const tasks: Job[] = [];
-const effects: (() => void)[] = [];
+let _updating = false;
+const _tasks: Job[] = [];
+const _effects: (() => void)[] = [];
 
 export function createElement(
   component: ComponentType,
@@ -122,11 +122,7 @@ export function createElement(
 }
 
 // Null element argument is meant for updating components.
-const update = (
-  node: RNode,
-  element: RElement | null,
-  config: UpdateConfig
-) => {
+function update(node: RNode, element: RElement | null, config: UpdateConfig) {
   const { host, isHydrating } = config;
   _currentHost = host;
 
@@ -158,7 +154,7 @@ const update = (
       node.kind === NodeType.FRAGMENT)
   ) {
     if (node.kind === NodeType.PROVIDER) {
-      const currentValue = contextValues.get(node.context);
+      const currentValue = _contextValues.get(node.context);
 
       if (currentValue) {
         replacedContext = {
@@ -167,7 +163,7 @@ const update = (
         };
       }
 
-      contextValues.set(node.context, { value: node.props.value });
+      _contextValues.set(node.context, { value: node.props.value });
     }
 
     elements = element.props.children;
@@ -305,9 +301,9 @@ const update = (
 
         // Remove node from mapping.
         if (import.meta.env.DEV && current.render.$id$) {
-          componentToNode.set(
+          _componentToNode.set(
             current.render.$id$,
-            (componentToNode.get(current.render.$id$) || []).filter((node) => {
+            (_componentToNode.get(current.render.$id$) || []).filter((node) => {
               return node !== current;
             })
           );
@@ -329,9 +325,9 @@ const update = (
 
         if (expected.kind === NodeType.COMPONENT) {
           if (import.meta.env.DEV && expected.render.$id$) {
-            componentToNode.set(
+            _componentToNode.set(
               expected.render.$id$,
-              (componentToNode.get(expected.render.$id$) || []).concat(newNode)
+              (_componentToNode.get(expected.render.$id$) || []).concat(newNode)
             );
           }
         }
@@ -415,15 +411,15 @@ const update = (
 
         // Remove node from mapping.
         if (import.meta.env.DEV && current.render.$id$) {
-          componentToNode.set(
+          _componentToNode.set(
             current.render.$id$,
-            (componentToNode.get(current.render.$id$) || []).filter((node) => {
+            (_componentToNode.get(current.render.$id$) || []).filter((node) => {
               return node !== current;
             })
           );
         }
       } else if (current.kind === NodeType.PROVIDER) {
-        contextValues.delete(current.context);
+        _contextValues.delete(current.context);
       }
 
       host.removeHostNode(current);
@@ -432,7 +428,7 @@ const update = (
   });
 
   if (node.kind === NodeType.PROVIDER && replacedContext !== null) {
-    contextValues.set(replacedContext.context, {
+    _contextValues.set(replacedContext.context, {
       value: replacedContext.value,
     });
   }
@@ -440,41 +436,41 @@ const update = (
   _currentNode = previousNode;
   _hookIndex = previousIndex;
   _currentHost = null;
-};
+}
 
-const runUpdateLoop = (
+function runUpdateLoop(
   node: RNode,
   element: RElement | null,
   config: UpdateConfig
-) => {
-  tasks.push({ node, element });
+) {
+  _tasks.push({ node, element });
 
-  if (updating) {
+  if (_updating) {
     return;
   }
 
-  updating = true;
+  _updating = true;
 
   let current: Job | undefined;
   // Run all state updates.
-  while ((current = tasks.shift())) {
+  while ((current = _tasks.shift())) {
     update(current.node, current.element, config);
 
     // Run all effects queued for this update.
     let effect: (() => void) | undefined;
-    while ((effect = effects.shift())) {
+    while ((effect = _effects.shift())) {
       effect();
     }
   }
 
-  contextValues.clear();
-  updating = false;
-};
+  _contextValues.clear();
+  _updating = false;
+}
 
-export const useEffect = (
+export function useEffect(
   callback: () => void | (() => void),
   dependencies?: any[]
-): void => {
+): void {
   // Capture the current node.
   const c = _currentNode;
   const i = _hookIndex;
@@ -483,7 +479,7 @@ export const useEffect = (
     throw new Error("Executing useEffect for non-function element.");
   }
 
-  effects.push(() => {
+  _effects.push(() => {
     if (!c || c.kind !== NodeType.COMPONENT) {
       throw new Error("Executing useEffect for non-function element.");
     }
@@ -532,11 +528,11 @@ export const useEffect = (
   });
 
   _hookIndex += 1;
-};
+}
 
-export const useState = <T>(
+export function useState<T>(
   initial: T
-): [T, (next: T | ((current: T) => T)) => void] => {
+): [T, (next: T | ((current: T) => T)) => void] {
   // Capture the current node.
   const c = _currentNode;
   const i = _hookIndex;
@@ -582,9 +578,9 @@ export const useState = <T>(
   _hookIndex += 1;
 
   return [hook.state, setState];
-};
+}
 
-export const useRef = <T>(): { current: T | null } => {
+export function useRef<T>(): { current: T | null } {
   if (!_currentNode || _currentNode.kind !== NodeType.COMPONENT) {
     throw new Error("Can't use useRef on this node.");
   }
@@ -605,9 +601,9 @@ export const useRef = <T>(): { current: T | null } => {
   _hookIndex += 1;
 
   return ref;
-};
+}
 
-export const useMemo = <T>(callback: () => T, dependencies: any[]): T => {
+export function useMemo<T>(callback: () => T, dependencies: any[]): T {
   if (!_currentNode || _currentNode.kind !== NodeType.COMPONENT) {
     throw new Error("Can't call useMemo on this node.");
   }
@@ -648,9 +644,9 @@ export const useMemo = <T>(callback: () => T, dependencies: any[]): T => {
 
   _hookIndex += 1;
   return hook.memo;
-};
+}
 
-export const createContext = <T>(): Context<T> => {
+export function createContext<T>(): Context<T> {
   const context: any = {};
 
   const providerRender = <T>({ value }: ProviderProps<T>): RElement => {
@@ -662,14 +658,14 @@ export const createContext = <T>(): Context<T> => {
   providerRender.context = context;
   context.Provider = providerRender;
   return context;
-};
+}
 
-export const useContext = <T>(context: Context<T>): T => {
+export function useContext<T>(context: Context<T>): T {
   if (!_currentNode || _currentNode.kind !== NodeType.COMPONENT) {
     throw new Error("Can't call useContext on this node.");
   }
 
-  const newValue = contextValues.get(context);
+  const newValue = _contextValues.get(context);
   if (_currentNode.hooks[_hookIndex] === undefined || newValue) {
     _currentNode.hooks[_hookIndex] = {
       type: HookType.CONTEXT,
@@ -684,9 +680,9 @@ export const useContext = <T>(context: Context<T>): T => {
 
   _hookIndex += 1;
   return hook.context;
-};
+}
 
-export const render = (element: RElement, container: HTMLElement): void => {
+export function render(element: RElement, container: HTMLElement): void {
   _rootNode = {
     kind: NodeType.HOST,
     props: {
@@ -698,12 +694,12 @@ export const render = (element: RElement, container: HTMLElement): void => {
     descendants: [],
   };
 
-  componentToNode.clear();
+  _componentToNode.clear();
 
   runUpdateLoop(_rootNode, createElement("div", {}, element), {
     host: domHost,
   });
-};
+}
 
 const printSSRTree = (node: SSRNode | string): string => {
   if (typeof node === "string") {
@@ -721,7 +717,7 @@ const printSSRTree = (node: SSRNode | string): string => {
   return `<${node.tag}${optionalSpace}${attributes}>${children}</${node.tag}>`;
 };
 
-export const renderToString = (element: RElement): string => {
+export function renderToString(element: RElement): string {
   _rootNode = {
     kind: NodeType.HOST,
     props: {
@@ -739,9 +735,9 @@ export const renderToString = (element: RElement): string => {
   });
 
   return printSSRTree(_rootNode.native);
-};
+}
 
-export const hydrate = (element: RElement, container: HTMLElement): void => {
+export function hydrate(element: RElement, container: HTMLElement): void {
   _rootNode = {
     kind: NodeType.HOST,
     props: {
@@ -760,12 +756,12 @@ export const hydrate = (element: RElement, container: HTMLElement): void => {
     isHydrating: true,
   });
   _node = null;
-};
+}
 
 // TODO
 // Move somewhere outside.
 let _node: Node | null = null;
-const getNextNode = () => {
+function getNextNode() {
   if (_node === null) {
     return;
   } else if (_node.firstChild) {
@@ -782,10 +778,10 @@ const getNextNode = () => {
     }
     _node = _node.nextSibling;
   }
-};
+}
 
 if (import.meta.env.DEV && typeof window !== "undefined") {
   window.__UPDATE__ = (node: RNode) =>
     runUpdateLoop(node, null, { host: domHost });
-  window.__COMPONENT_TO_NODE__ = componentToNode;
+  window.__COMPONENT_TO_NODE__ = _componentToNode;
 }

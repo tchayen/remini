@@ -46,8 +46,7 @@ export enum NodeType {
   HOST = 2,
   TEXT = 3,
   PROVIDER = 4,
-  NULL = 5,
-  FRAGMENT = 6,
+  FRAGMENT = 5,
 }
 
 export type ComponentElement = {

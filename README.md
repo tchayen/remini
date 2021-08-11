@@ -67,6 +67,7 @@ render(c(Counter), document.getElementById("root"));
 - [Build your own React](https://pomb.us/build-your-own-react/)
 - [XSS via a spoofed React element](http://danlec.com/blog/xss-via-a-spoofed-react-element)
 - [What are the downsides of preact?](https://github.com/preactjs/preact/issues/2199)
+
 ### HMR
 
 - [Dan Abramov's comment describing how to implement HMR](https://github.com/facebook/react/issues/16604#issuecomment-528663101)
@@ -90,3 +91,7 @@ render(c(Counter), document.getElementById("root"));
 - [Forwarding refs](https://reactjs.org/docs/forwarding-refs.html)
 - [Portals](https://reactjs.org/docs/jsx-in-depth.html)
 - [Server components](https://github.com/josephsavona/rfcs/blob/server-components/text/0000-server-components.md)
+
+## TODO
+
+- [ ] Fast refresh duplicates SVG nodes
