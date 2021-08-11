@@ -1,155 +1,137 @@
-import { createElement as c, render } from "../../../packages/remini/lib";
+import {
+  createElement as c,
+  render,
+  useMemo,
+  useState,
+} from "../../../packages/remini/lib";
+import {
+  BACKGROUND_COLORS_GRADIENT,
+  MIN_WIDTH_TO_DISPLAY,
+  ROW_HEIGHT,
+  TEXT_COLOR,
+} from "./consts";
 
-const MIN_WIDTH_TO_DISPLAY = 1;
-const MIN_WIDTH_TO_DISPLAY_TEXT = 12;
-const ROW_HEIGHT = 20;
-const TEXT_HEIGHT = 18;
+import input from "./data.json";
+import Rectangle from "./Rectangle";
+import { ChartData, ChartNode, SourceNode } from "./types";
 
-// http://gka.github.io/palettes/#colors=#37AFA9,#FEBC38|steps=25|bez=0|coL=0
-const backgroundColorGradient = [
-  "#37afa9",
-  "#4bb0a5",
-  "#5ab0a1",
-  "#67b19d",
-  "#72b299",
-  "#7cb295",
-  "#86b390",
-  "#8fb48c",
-  "#97b488",
-  "#9fb584",
-  "#a6b680",
-  "#aeb67b",
-  "#b5b777",
-  "#bcb772",
-  "#c2b86e",
-  "#c9b869",
-  "#cfb965",
-  "#d5b960",
-  "#dbba5b",
-  "#e1ba56",
-  "#e7bb50",
-  "#edbb4b",
-  "#f3bb45",
-  "#f8bc3f",
-  "#febc38",
-];
+function processInput(node: SourceNode): ChartData {
+  let depth = 0;
+  let root: string | null = null;
+  let id = 0;
+  const nodes: { [uid: string]: ChartNode } = {};
+  const levels: string[][] = [];
 
-type RectangleProps = {
-  x: number;
-  y: number;
-  isDimmed?: boolean;
-  width: number;
-  height: number;
-  color: string;
-  backgroundColor: string;
-  label: string;
-};
+  function run(node: SourceNode, depth: number, valueFromLeft: number) {
+    if (!Array.isArray(levels[depth])) {
+      levels[depth] = [];
+    }
 
-const Rectangle = ({
-  x,
-  y,
-  isDimmed,
-  width,
-  height,
-  color,
-  backgroundColor,
-  label,
-}: RectangleProps) => {
-  return (
-    <g style={{ transition: "all ease-in-out 200ms" }}>
-      <rect width={width} height={height} fill={backgroundColor}></rect>
-      <foreignObject
-        width={width}
-        height={height}
-        style={{
-          transition: "all ease-in-out 200ms",
-          display: "block",
-          pointerEvents: "none",
-          //
-          opacity: isDimmed ? 0.75 : 1,
-          paddingLeft: x < 0 ? -x : 0,
-        }}
-        y={0}
-      >
-        <div
-          style={{
-            pointerEvents: "none",
-            whiteSpace: "nowrap",
-            textOverflow: "ellipsis",
-            overflow: "hidden",
-            fontSize: "12px",
-            fontFamily: "sans-serif",
-            marginLeft: "4px",
-            marginRight: "4px",
-            lineHeight: 1.5,
-            padding: 0,
-            transition: "all ease-in-out 200ms",
-            userSelect: "none",
-            //
-            color,
-          }}
-        >
-          {label}
-        </div>
-      </foreignObject>
-    </g>
-  );
-};
+    const chartNode: ChartNode = {
+      uid: `node-${id}`,
+      backgroundColor:
+        BACKGROUND_COLORS_GRADIENT[
+          Math.min(depth, BACKGROUND_COLORS_GRADIENT.length - 1)
+        ],
+      color: TEXT_COLOR,
+      depth,
+      left: valueFromLeft,
+      name: node.name,
+      width: node.value,
+    };
 
-type ChartNode = {
-  backgroundColor: string;
-  color: string;
-  depth: number;
-  left: number;
-  name: string;
-  tooltip?: string;
-  width: number;
-};
+    id += 1;
+    if (root === null) {
+      root = chartNode.uid;
+    }
 
-type ChartData = {
-  height: number;
-  levels: string[][];
-  nodes: { [uid: string]: ChartNode };
-  root: string;
-};
+    levels[depth].push(chartNode.uid);
+    nodes[chartNode.uid] = chartNode;
 
-const data: ChartData = {
-  height: 4,
-  levels: [["0"], [], [], []],
-  nodes: {
-    "0": {
-      backgroundColor: "#ff00ff",
-      color: "#ffffff",
-      depth: 0,
-      left: 0,
-      width: 100,
-      name: "0",
-    },
-  },
-  root: "0",
-};
+    if (!node.children) {
+      return;
+    }
+
+    let valueSum = valueFromLeft;
+    node.children.forEach((child) => {
+      run(child, depth + 1, valueSum);
+      valueSum += child.value;
+    });
+  }
+
+  run(node, depth, 0);
+
+  if (root === null) {
+    throw new Error("Incorrect input.");
+  }
+
+  return {
+    height: levels.length,
+    levels,
+    nodes,
+    root,
+  };
+}
+
+const WIDTH = 1508;
 
 const App = () => {
+  const data = useMemo(() => processInput(input), []);
+  const [focusedNode, setFocusedNote] = useState(data.root);
+
+  const onClick = (node: string) => {
+    console.log(node);
+    setFocusedNote(node);
+  };
+
+  const scale = (value: number) =>
+    (value / data.nodes[focusedNode].width) * WIDTH;
+
+  const focusedNodeLeft = scale(data.nodes[focusedNode].left);
+  const focusedNodeWidth = scale(data.nodes[focusedNode].width);
+
   const hm = data.levels
-    .map((level, i) =>
-      level.map((node) => (
-        <Rectangle
-          backgroundColor={data.nodes[node].backgroundColor}
-          color={data.nodes[node].color}
-          height={ROW_HEIGHT}
-          width={data.nodes[node].width}
-          label={data.nodes[node].name}
-          x={data.nodes[node].left}
-          y={i * ROW_HEIGHT}
-        />
-      ))
-    )
+    .map((level, i) => {
+      return level.map((node) => {
+        const nodeLeft = scale(data.nodes[node].left);
+        const nodeWidth = scale(data.nodes[node].width);
+
+        // if (nodeWidth < MIN_WIDTH_TO_DISPLAY) {
+        //   return null;
+        // }
+
+        // if (
+        //   nodeLeft + nodeWidth < focusedNodeLeft ||
+        //   nodeLeft > focusedNodeLeft + focusedNodeWidth
+        // ) {
+        //   return null;
+        // }
+
+        return (
+          <Rectangle
+            backgroundColor={data.nodes[node].backgroundColor}
+            color={data.nodes[node].color}
+            label={data.nodes[node].name}
+            height={ROW_HEIGHT}
+            width={nodeWidth}
+            x={nodeLeft - focusedNodeLeft}
+            y={i * ROW_HEIGHT}
+            isDimmed={i < data.nodes[focusedNode].depth}
+            onClick={() => onClick(node)}
+          />
+        );
+      });
+    })
     // TODO:
     // Property 'flat' does not exist on type 'any[][]'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2019' or later.ts(2550)
     .flat();
 
   return (
-    <svg width="100vw" height="100vh" viewBox="0 0 100 100">
+    <svg
+      width={WIDTH}
+      height={data.levels.length * ROW_HEIGHT}
+      viewBox={`0 0 ${WIDTH} ${data.levels.length * ROW_HEIGHT}`}
+    >
       {/* <Rectangle
           backgroundColor="#ff00ff"
           color="#fff"
