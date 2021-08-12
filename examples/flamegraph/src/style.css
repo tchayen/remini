@@ -1,3 +1,13 @@
+@import url("https://rsms.me/inter/inter.css");
+html {
+  font-family: "Inter", sans-serif;
+}
+@supports (font-variation-settings: normal) {
+  html {
+    font-family: "Inter var", sans-serif;
+  }
+}
+
 .g {
   /* transition: width ease-in-out 200ms, transform ease-in-out 200ms,
     opacity ease-in-out 200ms;
@@ -12,7 +22,8 @@
   text-overflow: ellipsis;
   overflow: hidden;
   font-size: 12px;
-  font-family: sans-serif;
+  font-weight: 300;
+  font-family: "Inter var", sans-serif;
   margin-left: 4px;
   margin-right: 4px;
   line-height: 1.5;
