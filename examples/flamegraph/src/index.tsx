@@ -1,5 +1,8 @@
+import "./style.css";
+
 import {
   createElement as c,
+  Fragment,
   render,
   useMemo,
   useState,
@@ -90,34 +93,39 @@ const App = () => {
   const focusedNodeLeft = scale(data.nodes[focusedNode].left);
   const focusedNodeWidth = scale(data.nodes[focusedNode].width);
 
-  const hm = data.levels
+  const nodes = data.levels
     .map((level, i) => {
-      return level.map((node) => {
-        const nodeLeft = scale(data.nodes[node].left);
-        const nodeWidth = scale(data.nodes[node].width);
+      // if (i > 20) {
+      //   return [];
+      // }
 
-        // if (nodeWidth < MIN_WIDTH_TO_DISPLAY) {
-        //   return null;
-        // }
+      return level.map((uid) => {
+        const node = data.nodes[uid];
+        const nodeLeft = scale(node.left);
+        const nodeWidth = scale(node.width);
 
-        // if (
-        //   nodeLeft + nodeWidth < focusedNodeLeft ||
-        //   nodeLeft > focusedNodeLeft + focusedNodeWidth
-        // ) {
-        //   return null;
-        // }
+        if (nodeWidth < MIN_WIDTH_TO_DISPLAY) {
+          return <></>;
+        }
+
+        if (
+          nodeLeft + nodeWidth < focusedNodeLeft ||
+          nodeLeft > focusedNodeLeft + focusedNodeWidth
+        ) {
+          return <></>;
+        }
 
         return (
           <Rectangle
-            backgroundColor={data.nodes[node].backgroundColor}
-            color={data.nodes[node].color}
-            label={data.nodes[node].name}
+            backgroundColor={node.backgroundColor}
+            color={node.color}
+            label={node.name}
             height={ROW_HEIGHT}
             width={nodeWidth}
             x={nodeLeft - focusedNodeLeft}
             y={i * ROW_HEIGHT}
             isDimmed={i < data.nodes[focusedNode].depth}
-            onClick={() => onClick(node)}
+            onClick={() => onClick(uid)}
           />
         );
       });
@@ -127,22 +135,16 @@ const App = () => {
     .flat();
 
   return (
-    <svg
-      width={WIDTH}
-      height={data.levels.length * ROW_HEIGHT}
-      viewBox={`0 0 ${WIDTH} ${data.levels.length * ROW_HEIGHT}`}
+    <div
+      style={{
+        position: "relative",
+        width: `${WIDTH - 1}px`,
+        height: `${data.levels.length * ROW_HEIGHT}px`,
+        overflow: "hidden",
+      }}
     >
-      {/* <Rectangle
-          backgroundColor="#ff00ff"
-          color="#fff"
-          height={24}
-          width={50}
-          label="Test"
-          x={0}
-          y={0}
-        /> */}
-      {hm}
-    </svg>
+      {nodes}
+    </div>
   );
 };
 

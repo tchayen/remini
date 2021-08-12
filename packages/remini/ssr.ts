@@ -18,9 +18,9 @@ export function removeHostNode(node: RNode): void {
     const { children } = node.native.parent;
     children.splice(children.indexOf(node.native), 1);
   } else {
-    node.descendants.forEach((child) => {
-      removeHostNode(child);
-    });
+    for (let i = 0; i < node.descendants.length; i++) {
+      removeHostNode(node.descendants[i]);
+    }
   }
 }
 
@@ -34,7 +34,10 @@ export function createHostNode(element: HostElement): SSRNode {
     attributes: {},
   };
 
-  Object.entries(element.props).forEach(([key, value]) => {
+  const props = Object.entries(element.props);
+  for (let i = 0; i < props.length; i++) {
+    const [key, value] = props[i];
+
     if (key === "children" || key === "ref") {
       // Skip.
     } else if (key === "style") {
@@ -46,7 +49,7 @@ export function createHostNode(element: HostElement): SSRNode {
     } else {
       html.attributes[keyToAttribute(key)] = value;
     }
-  });
+  }
 
   return html;
 }
@@ -54,7 +57,9 @@ export function createHostNode(element: HostElement): SSRNode {
 export function updateHostNode(current: HostNode, expected: HostElement): void {
   const html = current.native as SSRNode;
 
-  Object.keys(current.props).forEach((key) => {
+  const currentKeys = Object.keys(current.props);
+  for (let i = 0; i < currentKeys.length; i++) {
+    const key = currentKeys[i];
     if (key === "children" || key === "ref") {
       // Skip.
     } else if (isEvent(key)) {
@@ -64,30 +69,19 @@ export function updateHostNode(current: HostNode, expected: HostElement): void {
       if (!expected.props[key]) {
         delete html.attributes[key];
       }
-
-      // Prop will be updated.
-      if (expected.props[key]) {
-        if (key === "style") {
-          const style =
-            typeof expected.props[key] === "string"
-              ? expected.props[key]
-              : styleObjectToString(expected.props[key]);
-          html.attributes[key] = style;
-        } else {
-          html.attributes[keyToAttribute(key)] = expected.props[key] as string;
-        }
-      }
     }
-  });
+  }
 
-  Object.keys(expected.props).forEach((key) => {
+  const expectedKeys = Object.keys(expected.props);
+  for (let i = 0; i < expectedKeys.length; i++) {
+    const key = expectedKeys[i];
     if (key === "children" || key === "ref") {
       // Skip.
     } else if (isEvent(key)) {
       // html.addEventListener(eventToKeyword(key), expected.props[key]);
     } else {
-      // Prop will be added.
-      if (!current.props[key]) {
+      // Prop will be added/updated.
+      if (expected.props[key] !== current.props[key]) {
         if (key === "style") {
           const style =
             typeof current.props[key] === "string"
@@ -99,7 +93,7 @@ export function updateHostNode(current: HostNode, expected: HostElement): void {
         }
       }
     }
-  });
+  }
 }
 
 export function appendChild(parent: SSRNode, child: SSRNode): void {

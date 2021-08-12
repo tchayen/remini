@@ -1,0 +1,21 @@
+.g {
+  /* transition: width ease-in-out 200ms, transform ease-in-out 200ms,
+    opacity ease-in-out 200ms;
+  will-change: transform, width, opacity; */
+  position: absolute;
+  overflow: hidden;
+}
+
+.text {
+  pointer-events: none;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  font-size: 12px;
+  font-family: sans-serif;
+  margin-left: 4px;
+  margin-right: 4px;
+  line-height: 1.5;
+  padding: 0;
+  user-select: none;
+}

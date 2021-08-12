@@ -18,6 +18,8 @@ import {
 
 export type { RElement } from "./types";
 
+export const Fragment = "";
+
 // const Avatar = ({ author }: { author: number }) => {
 //   return createElement("div", { class: "123" }, author.toString());
 // };
@@ -185,7 +187,9 @@ function update(node: RNode, element: RElement | null, config: UpdateConfig) {
     pairs.push([node.descendants[i], elements[i]]);
   }
 
-  pairs.forEach(([current, expected]) => {
+  for (let i = 0; i < pairs.length; i++) {
+    const [current, expected] = pairs[i];
+
     if (
       current &&
       expected &&
@@ -425,7 +429,7 @@ function update(node: RNode, element: RElement | null, config: UpdateConfig) {
       host.removeHostNode(current);
       node.descendants.splice(indexOfCurrent, 1);
     }
-  });
+  }
 
   if (node.kind === NodeType.PROVIDER && replacedContext !== null) {
     _contextValues.set(replacedContext.context, {
@@ -454,7 +458,14 @@ function runUpdateLoop(
   let current: Job | undefined;
   // Run all state updates.
   while ((current = _tasks.shift())) {
-    update(current.node, current.element, config);
+    if (typeof performance !== "undefined") {
+      const start = performance.now();
+      update(current.node, current.element, config);
+      const end = performance.now();
+      console.log(`${Math.round(end - start)}ms`);
+    } else {
+      update(current.node, current.element, config);
+    }
 
     // Run all effects queued for this update.
     let effect: (() => void) | undefined;
