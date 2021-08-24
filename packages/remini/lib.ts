@@ -187,9 +187,7 @@ function update(node: RNode, element: RElement | null, config: UpdateConfig) {
     pairs.push([node.descendants[i], elements[i]]);
   }
 
-  for (let i = 0; i < pairs.length; i++) {
-    const [current, expected] = pairs[i];
-
+  for (const [current, expected] of pairs) {
     if (
       current &&
       expected &&
@@ -710,6 +708,27 @@ export function render(element: RElement, container: HTMLElement): void {
   runUpdateLoop(_rootNode, createElement("div", {}, element), {
     host: domHost,
   });
+}
+
+export function renderWithConfig(
+  element: RElement,
+  container: HTMLElement,
+  config: UpdateConfig
+): void {
+  _rootNode = {
+    kind: NodeType.HOST,
+    props: {
+      children: [element],
+    },
+    tag: container.tagName.toLowerCase(),
+    native: container,
+    parent: null,
+    descendants: [],
+  };
+
+  _componentToNode.clear();
+
+  runUpdateLoop(_rootNode, createElement("div", {}, element), config);
 }
 
 const printSSRTree = (node: SSRNode | string): string => {

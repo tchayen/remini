@@ -42,11 +42,11 @@ export type RenderFunction = ((props: any) => RElement | null) & {
 export type ComponentType = RenderFunction | string;
 
 export enum NodeType {
-  COMPONENT = 1,
-  HOST = 2,
-  TEXT = 3,
-  PROVIDER = 4,
-  FRAGMENT = 5,
+  COMPONENT,
+  HOST,
+  TEXT,
+  PROVIDER,
+  FRAGMENT,
 }
 
 export type ComponentElement = {
@@ -119,11 +119,11 @@ export type RNode =
   | FragmentNode;
 
 export enum HookType {
-  STATE = 1,
-  EFFECT = 2,
-  REF = 3,
-  CONTEXT = 4,
-  MEMO = 5,
+  STATE,
+  EFFECT,
+  REF,
+  CONTEXT,
+  MEMO,
 }
 
 export type StateHook = {
